@@ -1,0 +1,16 @@
+/home/kvv/ssd1/NexUs/client
+/home/kvv/ssd1/NexUs/client.go
+/home/kvv/ssd1/NexUs/data_file.txt
+/home/kvv/ssd1/NexUs/dir_client
+/home/kvv/ssd1/NexUs/dir_teste
+/home/kvv/ssd1/NexUs/server
+/home/kvv/ssd1/NexUs/server.go
+/home/kvv/ssd1/NexUs/teste
+/home/kvv/ssd1/NexUs/teste.go
+/home/kvv/ssd1/NexUs/teste.txt
+/home/kvv/ssd1/NexUs/teste2
+/home/kvv/ssd1/NexUs/teste2.go
+/home/kvv/ssd1/NexUs/teste3
+/home/kvv/ssd1/NexUs/teste3.go
+/home/kvv/ssd1/NexUs/teste4
+/home/kvv/ssd1/NexUs/teste4.go

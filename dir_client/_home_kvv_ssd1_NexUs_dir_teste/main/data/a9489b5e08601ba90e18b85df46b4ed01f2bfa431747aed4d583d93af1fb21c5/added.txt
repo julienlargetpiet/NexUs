@@ -1,0 +1,3 @@
+/home/kvv/ssd1/NexUs/dir_teste
+/home/kvv/ssd1/NexUs/dir_teste/b.txt
+/home/kvv/ssd1/NexUs/dir_teste/a.txt
