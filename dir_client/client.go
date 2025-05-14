@@ -15,7 +15,110 @@ import (
 )
 
 var base_dir string = "/home/kvv/ssd1/NexUs/dir_client/"
-var srv_host string = "0.0.0.0:8080"
+var ref_nb = [10]uint8{'0', '1', '2', '3', '4', 
+                       '5', '6', '7', '8', '9'}
+
+func GoodIP(x *string) bool {
+  var n int  = len(*x)
+  var i int = 0
+  var i2 int
+  var cur_val string
+  for I := 0; I < 3; I++ {
+    cur_val = ""
+    for i < n && (*x)[i] != '.' {
+      i2 = 0
+      for i2 < 10 {
+        if ref_nb[i2] != (*x)[i] {
+          i2++
+        } else {
+          break
+        }
+      }
+      if i2 == 10 {
+        return false
+      }
+      cur_val += string((*x)[i])
+      i++
+    }
+    if len(cur_val) > 3 || len(cur_val) == 0 {
+      return false
+    }
+    i++
+  }
+  cur_val = ""
+  for i < n {
+    i2 = 0
+    for i2 < 10 {
+      if ref_nb[i2] != (*x)[i] {
+        i2++
+      } else {
+        break
+      }
+    }
+    if i2 == 10 {
+      return false
+    }
+    cur_val += string((*x)[i])
+    i++
+  }
+  if len(cur_val) > 3 || len(cur_val) == 0 {
+    return false
+  }
+  return true
+}
+
+func GoodPort(x *string) bool {
+  var i2 int
+  for i := 0; i < len(*x); i++ {
+    i2 = 0
+    for i2 < 10 {
+      if (*x)[i] != ref_nb[i2] {
+        i2++
+      } else {
+        break
+      }
+    }
+    if i2 == 10 {
+      return false
+    }
+  }
+  int_port := StringToInt(*x)
+  if int_port < 5000 || int_port > 90000 {
+    return false
+  }
+  return true
+}
+
+func VerifHost(x *string) (bool, string) {
+  cur_val := ""
+  var i int = 0
+  var n int = len(*x)
+  for i < n && (*x)[i] != ':' {
+    cur_val += string((*x)[i])
+    i++
+  }
+  if i == n {
+    return false, "no port provided"
+  }
+  i++ 
+  if i == n {
+    return false, "no port provided"
+  }
+  is_valid := GoodIP(&cur_val)
+  if !is_valid {
+    return false, "the ip is not a valid ip format"
+  }
+  cur_val = ""
+  for i < n {
+    cur_val += string((*x)[i])
+    i++
+  }
+  is_valid = GoodPort(&cur_val)
+  if !is_valid {
+    return false, "the port is not valid"
+  }
+  return true, ""
+}
 
 func StringToInt(x string) int {
   var ref_nb = [10]uint8{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
@@ -635,6 +738,13 @@ func main() {
       fmt.Println("Error:", err)
       return
     }
+    err = os.WriteFile(base_dir + cur_val + "/host_info.txt", 
+                       []byte("main\n"), 
+                       0755)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
     err = os.WriteFile(base_dir + cur_val + "/main/cur_commit.txt", 
                        []byte(""), 
                        0755)
@@ -901,7 +1011,7 @@ func main() {
     return
   }
 
-  if frst_arg == "branchall" {
+  if frst_arg == "branchlist" {
     if n > 2 {
       fmt.Println("Too much args")
       return
@@ -929,7 +1039,7 @@ func main() {
       return
     }
     branch := string(data)
-    fmt.Println(branch)
+    fmt.Printf("%v", branch)
     return
   }
 
@@ -1574,18 +1684,30 @@ func main() {
   }
 
   if frst_arg == "sethost" {
-    if n < 4 {
+    if n < 3 {
       fmt.Println("Error: not enough argument, the ip and port must be provided")
       return
     }
-    if n > 4 {
-      fmt.Println("Error: not enough argument")
+    if n > 3 {
+      fmt.Println("Error: too much argument")
       return
     }
-    ip_vl := os.Args[2]
-    port_vl := os.Args[3]
-    err = os.WriteFile("host_info.txt", 
-                             []byte(ip_vl + ":" + port_vl), 
+    host_vl := os.Args[2]
+    is_valid, rtn_msg := VerifHost(&host_vl)
+    if !is_valid {
+      fmt.Println("Error:", rtn_msg)
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    err = os.WriteFile(base_dir + cur_val3 + "/host_info.txt", 
+                             []byte(host_vl), 
                              0644)
     if err != nil {
       fmt.Println("Error", err)
@@ -1796,7 +1918,28 @@ func main() {
   }
 
   if frst_arg == "hostinfo" {
-    data, err = os.ReadFile(base_dir + "host_info.txt")
+    if n > 2 {
+      fmt.Println("Error: too much argument")
+      return
+    }
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/host_info.txt")
     if err != nil {
       fmt.Println("Error:", err)
       return
