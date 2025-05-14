@@ -649,7 +649,6 @@ func main() {
   var cur_val2 string
   var cur_val3 string
   var cur_val4 string
-  var cur_val5 string
   var is_valid bool
   var data []byte
   var str_data string
@@ -1241,17 +1240,16 @@ func main() {
         cur_val3 += string(cur_dir[i])
       }
     }
-    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    extrn_branch := os.Args[2]
+    cur_val2 = base_dir + cur_val3 + "/" + extrn_branch
+    data, err = os.ReadFile(cur_val2 + "/cur_commit.txt")
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
-    my_branch := string(data)
-    extrn_branch := os.Args[2]
-    cur_val5 = base_dir + cur_val3 + "/"
-    cur_val2 = cur_val5 + extrn_branch
-    cur_val = cur_val2 + "/cur_added.txt"
-    cur_val5 += my_branch
+    cur_val2 += ("/data/" + string(data))
+    cur_val = cur_val2 + "/added.txt"
+    var dc_data []byte
     for i = 3; i < n; i++ {
       file = os.Args[i]
       cur_val4 = cur_dir + "/" + file
@@ -1264,12 +1262,17 @@ func main() {
         fmt.Println("Error: the file " + cur_val4 + " does not exist")
         return
       }
-      data, err = os.ReadFile(cur_val2 + "/" + file)
+      data, err = os.ReadFile(cur_val2 + "/data/" + file)
       if err != nil {
         fmt.Println("Error:", err)
         return
       }
-      err = os.WriteFile(cur_val5 + "/" + file, data, 0644)
+      dc_data, err = deCompress(&data)
+      if err != nil {
+        fmt.Println("Error:", err)
+        return
+      }
+      err = os.WriteFile(cur_dir + "/" + file, dc_data, 0644)
       if err != nil {
         fmt.Println("Error:", err)
         return
