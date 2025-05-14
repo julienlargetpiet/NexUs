@@ -422,7 +422,11 @@ func ExistDirFile2(x *string, file_name *string) (bool, string, error) {
   n := len(*x)
   var i2 int
   var n2 int
-  for i := 0; i < len(data); i++ {
+  var pre_rtn []string
+  var i int
+  var cur_int int = 0
+  var cur_idx int = 0
+  for i = 0; i < len(data); i++ {
     if data[i] != 10 {
       cur_val += string(data[i])
     } else {
@@ -436,13 +440,25 @@ func ExistDirFile2(x *string, file_name *string) (bool, string, error) {
           i2++
         }
         if i2 == n2 {
-          return true, cur_val, nil 
+          pre_rtn = append(pre_rtn, cur_val)
         }
       }
       cur_val = ""
     }
   }
-  return false, "", nil
+  fmt.Println("ici:", pre_rtn)
+  if len(pre_rtn) > 0 {
+    for i2 = 0; i2 < len(pre_rtn); i2++ {
+      if len(pre_rtn[i2]) > cur_int {
+        cur_int = len(pre_rtn[i2])
+        cur_idx = i2
+      }
+    }
+    fmt.Println("ici2:", pre_rtn[cur_idx])
+    return true, pre_rtn[cur_idx], nil
+  } else {
+    return false, "", nil
+  }
 }
 
 func ExistDirFile3(x *string, file_name *string) (bool, string, error) {
@@ -829,6 +845,7 @@ func main() {
       cur_val4 = all_args[i]
       file = cur_dir + "/" + cur_val4
       is_valid, cur_val, err = ExistDirFile2(&file, &cur_val2)
+      fmt.Println("cur_val:", cur_val)
       if err != nil {
         fmt.Println("Error:", err)
         return
@@ -941,7 +958,7 @@ func main() {
         return
       }
       if !is_valid {
-        fmt.Println("Error: files and/or folders non existing for the currrent initiated repos")
+        fmt.Println("Error: files and/or folders non existing for the currrent commit")
         return
       }      
       err = os.WriteFile(cur_val2, []byte(str_data), 0755)
