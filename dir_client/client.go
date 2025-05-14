@@ -446,7 +446,6 @@ func ExistDirFile2(x *string, file_name *string) (bool, string, error) {
       cur_val = ""
     }
   }
-  fmt.Println("ici:", pre_rtn)
   if len(pre_rtn) > 0 {
     for i2 = 0; i2 < len(pre_rtn); i2++ {
       if len(pre_rtn[i2]) > cur_int {
@@ -454,7 +453,6 @@ func ExistDirFile2(x *string, file_name *string) (bool, string, error) {
         cur_idx = i2
       }
     }
-    fmt.Println("ici2:", pre_rtn[cur_idx])
     return true, pre_rtn[cur_idx], nil
   } else {
     return false, "", nil
@@ -845,7 +843,6 @@ func main() {
       cur_val4 = all_args[i]
       file = cur_dir + "/" + cur_val4
       is_valid, cur_val, err = ExistDirFile2(&file, &cur_val2)
-      fmt.Println("cur_val:", cur_val)
       if err != nil {
         fmt.Println("Error:", err)
         return
