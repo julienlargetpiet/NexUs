@@ -1195,17 +1195,6 @@ func main() {
     }
     branch := string(data)
     cur_val2 = base_dir + cur_val3 + "/" + branch
-    data, err = os.ReadFile(cur_val2 + "/cur_commit.txt")
-    if err != nil {
-      fmt.Println("Error:", err)
-      return
-    }
-    str_data = string(data)
-    if str_data == "" {
-      fmt.Println("No commit available to copy from")
-      return
-    }
-    cur_val2 = cur_val2 + "/" + str_data
     my_branch = base_dir + cur_val3 + "/" + my_branch
     err = os.Mkdir(my_branch, 0755)
     if err != nil {
