@@ -267,10 +267,10 @@ func DisplayDiff(file1 *string, file2 *string, sep *string) error {
     } else {
       fmt.Printf("%v+ %v\n", *sep, datab)
     }
+    i++
     if i2 == n {
       break
     }
-    i++
   }
   for i < n2 {
     datab = sl_str_data2[i]
@@ -329,13 +329,14 @@ func DisplayDiffCommit(file1 *string, file2 *string, sep *string) error {
   var i2 int = 0
   n := len(sl_str_data1)
   n2 := len(sl_str_data2)
-  for comp && i < n2 {
+  for i < n2 && comp {
     datab = sl_str_data2[i]
-    dataa = sl_str_data1[i]
-    for datab != dataa && i2 < n {
+    dataa = sl_str_data1[i2]
+    i2++
+    for i2 < n && datab != dataa {
       fmt.Printf("%v%v -\n", dataa, *sep)
-      i2++
       dataa = sl_str_data1[i2]
+      i2++
     }
     comp = (datab == dataa)
     if comp {
@@ -344,7 +345,9 @@ func DisplayDiffCommit(file1 *string, file2 *string, sep *string) error {
       fmt.Printf("%v+ %v\n", *sep, datab)
     }
     i++
-    i2++
+    if i2 == n {
+      break
+    }
   }
   for i < n2 {
     datab = sl_str_data2[i]
