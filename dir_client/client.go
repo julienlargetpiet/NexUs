@@ -714,6 +714,8 @@ func main() {
     fmt.Println("Example: nexus addorderclear\n")
     fmt.Println("'addorderlocate' prints the location of the content 'addorder' command uses")
     fmt.Println("Example: nexus addorderlocate\n")
+    fmt.Println("'addordersee' prints the content of addorder.txt")
+    fmt.Println("Example: nexus addordersee")
     return
   }
 
@@ -2164,6 +2166,44 @@ func main() {
     branch := string(data)
     cur_val2 = base_dir + cur_val3 + "/" + branch + "/addorder.txt"
     fmt.Println(string(cur_val2))
+    return
+  }
+
+  if frst_arg == "addordersee" {
+    if n > 2 {
+      fmt.Println("Error: too much argument")
+      return
+    }
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    branch := string(data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch + "/addorder.txt"
+    data, err = os.ReadFile(cur_val2)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    fmt.Println(string(data))
     return
   }
 
