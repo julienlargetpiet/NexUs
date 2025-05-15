@@ -1108,7 +1108,6 @@ func main() {
       return
     }
     for _, vl := range entries {
-      fmt.Println("filename:", vl.Name())
       if vl.IsDir() {
         err = os.RemoveAll(vl.Name())
         if err != nil {
@@ -1123,8 +1122,6 @@ func main() {
         }
       }
     }
-    fmt.Println("source branch:", cur_val2)
-    fmt.Println("cur_dir:", cur_dir)
     err = deCompressCopyDir(&cur_val2, &cur_dir)
     if err != nil {
       fmt.Println("Error:", err)
