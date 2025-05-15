@@ -2203,7 +2203,7 @@ func main() {
       fmt.Println("Error:", err)
       return
     }
-    fmt.Println(string(data))
+    fmt.Printf(string(data))
     return
   }
 
