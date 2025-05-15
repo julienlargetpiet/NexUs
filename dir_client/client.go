@@ -357,7 +357,88 @@ func DisplayDiffCommit(file1 *string, file2 *string, sep *string) error {
   if comp {
     for i2 < n {
       dataa = sl_str_data1[i2]
-      fmt.Printf("%v - %v\n", dataa, *sep)
+      fmt.Printf("%v%v -\n", dataa, *sep)
+      i2++
+    }
+  }
+  return nil
+}
+
+func DisplayDiffDual(file1 *string, file2 *string, sep *string) error {
+  var dataa string
+  var datab string
+  var comp bool = true
+  data, err := os.ReadFile(*file1)
+  if err != nil {
+    return err
+  }
+  data, err = deCompress(&data)
+  if err != nil {
+    return err
+  }
+  str_data := string(data)
+  var sl_str_data1 []string
+  var sl_str_data2 []string
+  var i int = 0
+  var cur_val string = ""
+  for i < len(str_data) {
+    if str_data[i] != '\n' {
+      cur_val += string(str_data[i])
+    } else {
+      sl_str_data1 = append(sl_str_data1, cur_val)
+      cur_val = ""
+    }
+    i++
+  }
+  data, err = os.ReadFile(*file2)
+  if err != nil {
+    return err
+  }
+  str_data = string(data)
+  i = 0
+  cur_val = ""
+  for i < len(str_data) {
+    if str_data[i] != '\n' {
+      cur_val += string(str_data[i])
+    } else {
+      sl_str_data2 = append(sl_str_data2, cur_val)
+      cur_val = ""
+    }
+    i++
+  }
+  i = 0
+  var i2 int = 0
+  n := len(sl_str_data1)
+  n2 := len(sl_str_data2)
+  for i < n2 && comp {
+    datab = sl_str_data2[i]
+    dataa = sl_str_data1[i2]
+    i2++
+    for i2 < n && datab != dataa {
+      fmt.Printf("%v%v -\n", dataa, *sep)
+      dataa = sl_str_data1[i2]
+      i2++
+    }
+    comp = (datab == dataa)
+    if comp {
+      fmt.Printf("%v%v%v\n", dataa, *sep, datab)
+    } else {
+      fmt.Printf("%v+ %v\n", *sep, datab)
+    }
+    i++
+    if i2 == n {
+      break
+    }
+  }
+  for i < n2 {
+    datab = sl_str_data2[i]
+    fmt.Printf("%v+ %v\n", *sep, datab)
+    i++
+  }
+  if comp {
+    for i2 < n {
+      dataa = sl_str_data1[i2]
+      fmt.Printf("%v%v -\n", dataa, *sep)
       i2++
     }
   }
@@ -721,7 +802,9 @@ func main() {
     fmt.Println("'addorderlocate' prints the location of the content 'addorder' command uses")
     fmt.Println("Example: nexus addorderlocate\n")
     fmt.Println("'addordersee' prints the content of addorder.txt")
-    fmt.Println("Example: nexus addordersee")
+    fmt.Println("Example: nexus addordersee\n")
+    fmt.Println("'sasdiff x file' will print the content diff between your current added file in sas stage, and the commit number provided")
+    fmt.Println("Example: nexus sasdiff 18 b.txt")
     return
   }
 
@@ -2484,6 +2567,101 @@ func main() {
     err = os.WriteFile(cur_val3 + "/cur_added.txt", 
                        []byte(cur_dir + "\n"), 
                        0644)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    return
+  }
+
+  if frst_arg == "sasdiff" {
+    if n < 3 {
+      fmt.Println("Error: not enough argument")
+      return
+    }
+    if n < 3 {
+      fmt.Println("Error: too much argument")
+      return
+    }
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    branch := string(data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch
+    tmp_val := cur_val2
+    cur_val4 = cur_val2 + "/cur_added.txt"
+    data, err = os.ReadFile(cur_val2 + "/commits.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    cur_val = ""
+    str_data = string(data)
+    i2 = StringToInt(os.Args[2])
+    var i3 int = 0
+    for i = 0; i < len(str_data); i++ {
+      if str_data[i] != '\n' {
+        cur_val += string(str_data[i])
+      } else {
+        if i2 == i3 {
+          if cur_val == "" {
+            fmt.Println("Error: the commit name is empty")
+            return
+          }
+          break
+        }
+        i3 += 1
+        cur_val = ""
+      }
+    }
+    if i2 != i3 {
+      fmt.Println("Error: the commit does not exist")
+      return
+    }
+    cur_val2 += ("/data/" + cur_val + "/added.txt")
+    file = os.Args[3]
+    tmp_val += ("/data/" + cur_val + "/data/" + file)
+    cur_val = cur_dir + "/" + file
+    is_valid, err = ExistDirFile(&cur_val, &cur_val2)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: the file provided does not exist in the provided commit")
+      return
+    }
+    is_valid, err = ExistDirFile(&cur_val, &cur_val4)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: the file provided does not exist in your current sas files")
+      return
+    }
+    cur_sep := " | "
+    tmp_val2 := cur_dir + "/" + file
+    err = DisplayDiffDual(&tmp_val, &tmp_val2, &cur_sep)
     if err != nil {
       fmt.Println("Error:", err)
       return
