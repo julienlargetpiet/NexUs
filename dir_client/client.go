@@ -704,8 +704,16 @@ func main() {
     fmt.Println("Example: nexus commitmsg 5, will print the commit message of the fith commit\n")
     fmt.Println("'commitdiff x1 x2 file file' will print the diff between the specified file through 2 differents commits")
     fmt.Println("Example: commitdiff 2 3 a.txt a.txt ,will print the content diff between the content of a.txt through the third commit and the fourth commit\n")
-    fmt.Println("'commitstructdiff x1 x2' will print the difference between the filestructure of 2 specified commits")
+    fmt.Println("'commitstructdiff x1 x2' will print the difference between the filestructure of 2 specified commits. To make sure it works as intended, the files and folders must be added in the same order, you can spcify it using 'addorder' command")
     fmt.Println("Example: nexus commitstructdiff 2 6 ,will print the filestructure difference between the third and the seventh commit\n")
+    fmt.Println("'addorder' performs a 'nexus add' with the specified order specified with 'addordernew'")
+    fmt.Println("Example: nexus addorder\n")
+    fmt.Println("'addordernew file1 folder folder/file2...' add in order the file and/or directories to add during the 'addorder' command")
+    fmt.Println("Example: nexus addordernew file1 folder folder/file2\n")
+    fmt.Println("'addorderclear' erases the content of the 'addorder' command")
+    fmt.Println("Example: nexus addorderclear\n")
+    fmt.Println("'addorderlocate' prints the location of the content 'addorder' command uses")
+    fmt.Println("Example: nexus addorderlocate\n")
     return
   }
 
@@ -768,6 +776,13 @@ func main() {
       return
     }
     err = os.WriteFile(base_dir + cur_val + "/main/is_pushed.txt", 
+                       []byte(""), 
+                       0755)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    err = os.WriteFile(base_dir + cur_val + "/main/addorder.txt", 
                        []byte(""), 
                        0755)
     if err != nil {
@@ -2043,6 +2058,256 @@ func main() {
       return
     }
     fmt.Println(string(data))
+    return
+  }
+
+  if frst_arg == "addordernew" {
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    branch := string(data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch + "/addorder.txt"
+    data, err = os.ReadFile(cur_val2)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    str_data = string(data)
+    for i = 2; i < n; i++ {
+      str_data += (os.Args[i] + "\n")
+    }
+    err = os.WriteFile(cur_val2, 
+                       []byte(str_data), 
+                       0644)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    return
+  }
+
+  if frst_arg == "addorderclear" {
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    branch := string(data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch + "/addorder.txt"
+    err = os.WriteFile(cur_val2, []byte(""), 0644)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    return
+  }
+
+  if frst_arg == "addorderlocate" {
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    branch := string(data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch + "/addorder.txt"
+    fmt.Println(string(cur_val2))
+    return
+  }
+
+  if frst_arg == "addorder" {
+    if n > 2 {
+      fmt.Println("Error: too much argument")
+      return
+    }
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    branch := string(data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch
+    var pre_all_args []string
+    data, err = os.ReadFile(cur_val2 + "/addorder.txt")
+    cur_val2 += "/cur_added.txt"
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    str_data = string(data)
+    cur_val = ""
+    for i = 0; i < len(str_data); i++ {
+      if str_data[i] != '\n' {
+        cur_val += string(str_data[i])
+      } else {
+        pre_all_args = append(pre_all_args, cur_val)
+        cur_val = ""
+      }
+    }
+    var all_args []string
+    var tmp_val string
+    var tmp_valv []string
+    var fileinfo os.FileInfo
+    for i = 2; i < len(pre_all_args); i++ {
+      tmp_val = os.Args[i]
+      if tmp_val[len(tmp_val) - 1] == '*' {
+        tmp_val = tmp_val[:len(tmp_val) - 2]
+        fileinfo, err = os.Stat(tmp_val)
+        if err != nil {
+          fmt.Println("Error:", err)
+          return
+        }
+        if fileinfo.IsDir() {
+          tmp_valv, err = Tree(tmp_val)
+          if err != nil {
+            fmt.Println("Error:", err)
+            return
+          }
+          all_args = append(all_args, tmp_valv...)
+        } else {
+          fmt.Println("Error: the statement '*' is only used to include all elements within a dir")
+        }
+      } else {
+        all_args = append(all_args, tmp_val)
+      }
+    }
+    for i = 0; i < len(all_args); i++ {
+      cur_val4 = all_args[i]
+      file = cur_dir + "/" + cur_val4
+      is_valid, cur_val, err = ExistDirFile2(&file, &cur_val2)
+      if err != nil {
+        fmt.Println("Error:", err)
+        return
+      }
+      if !is_valid {
+        fmt.Println("Error: files and/or folders non existing for the currrent initiated repos")
+        return
+      }
+      if file == cur_val {
+        fmt.Println("Error: file or directory already added for this commit")
+        return
+      }
+      i2 = len(cur_val) + 1
+      for i2 < len(file) - 1 {
+        if file[i2] == '/' {
+          fmt.Println("Error: Must include directories where the new element is being added")
+          return
+        }
+        i2++
+      }
+      data, err = os.ReadFile(cur_val2)
+      if err != nil {
+        fmt.Println("Error:", err)
+        return
+      }
+      str_data = string(data)
+      str_data += (file + "\n")
+      err = os.WriteFile(cur_val2, []byte(str_data), 0755)
+      if err != nil {
+        fmt.Println("Error:", err)
+        return
+      }
+      fileinfo, err = os.Stat(file)
+      if err != nil {
+        fmt.Println("Error:", err)
+        return
+      }
+      var c_data []byte
+      if !fileinfo.IsDir() {
+        data, err = os.ReadFile(file)
+        if err != nil {
+          fmt.Println("Error:", err)
+          return
+        }
+        c_data, err = Compress(&data)
+        if err != nil {
+          fmt.Println("Error:", err)
+          return
+        }
+        err = os.WriteFile(base_dir + cur_val3 + "/" + branch + "/sas/" + cur_val4, 
+                           c_data,
+                           0644)
+        if err != nil {
+          fmt.Println("Error:", err)
+          return
+        }
+      } else {
+        err = os.Mkdir(base_dir + cur_val3 + "/" + branch + "/sas/" + cur_val4, 0755)
+        if err != nil {
+          fmt.Println("Error:", err)
+          return
+        }
+      }
+    }
     return
   }
 
