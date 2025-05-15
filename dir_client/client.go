@@ -692,6 +692,12 @@ func main() {
     fmt.Println("Example: nexus branchrm main2\n")
     fmt.Println("'add' is to add files or directory to a temporary NexUs location called 'sas' before commiting")
     fmt.Println("Example: nexus add a.txt dira dira/*\n")
+    fmt.Println("'addsee' prints the current content addes for next commit")
+    fmt.Println("Example: nexus addsee\n")
+    fmt.Println("'addclear' will erase all content added for next commit")
+    fmt.Println("Example: nexus addclear")
+    fmt.Println("'addlocate' prints the location of the file where all the name of the content for the next commit is stored")
+    fmt.Println("Example nexus addlocate\n")
     fmt.Println("'rm' is to remove files or folders from your current directory and the 'sas'")
     fmt.Println("Example: nexus rm a.txt\n")
     fmt.Println("'commit' is to save the changes made to your project, after adding them into 'sas'")
@@ -2245,6 +2251,7 @@ func main() {
     }
     str_data = string(data)
     cur_val = ""
+    fmt.Println("okok")
     for i = 0; i < len(str_data); i++ {
       if str_data[i] != '\n' {
         cur_val += string(str_data[i])
@@ -2257,8 +2264,8 @@ func main() {
     var tmp_val string
     var tmp_valv []string
     var fileinfo os.FileInfo
-    for i = 2; i < len(pre_all_args); i++ {
-      tmp_val = os.Args[i]
+    for i = 0; i < len(pre_all_args); i++ {
+      tmp_val = pre_all_args[i]
       if tmp_val[len(tmp_val) - 1] == '*' {
         tmp_val = tmp_val[:len(tmp_val) - 2]
         fileinfo, err = os.Stat(tmp_val)
@@ -2280,6 +2287,7 @@ func main() {
         all_args = append(all_args, tmp_val)
       }
     }
+    fmt.Println("ok", pre_all_args)
     for i = 0; i < len(all_args); i++ {
       cur_val4 = all_args[i]
       file = cur_dir + "/" + cur_val4
@@ -2347,6 +2355,114 @@ func main() {
           return
         }
       }
+    }
+    return
+  }
+
+  if frst_arg == "addlocate" {
+    if n > 2 {
+      fmt.Println("Error: too much argument")
+      return
+    }
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    branch := string(data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch + "/cur_added.txt"
+    fmt.Println(cur_val2)
+    return
+  }
+  
+  if frst_arg == "addsee" {
+    if n > 2 {
+      fmt.Println("Error: too much argument")
+      return
+    }
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    branch := string(data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch + "/cur_added.txt"
+    data, err = os.ReadFile(cur_val2)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    fmt.Printf(string(data))
+    return
+  }
+
+  if frst_arg == "addclear" {
+    if n > 2 {
+      fmt.Println("Error: too much argument")
+      return
+    }
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    branch := string(data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch + "/cur_added.txt"
+    err = os.WriteFile(cur_val2, []byte(""), 0644)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
     }
     return
   }
