@@ -2287,7 +2287,7 @@ func main() {
         all_args = append(all_args, tmp_val)
       }
     }
-    fmt.Println("ok", pre_all_args)
+    fmt.Println("ok", all_args)
     for i = 0; i < len(all_args); i++ {
       cur_val4 = all_args[i]
       file = cur_dir + "/" + cur_val4
@@ -2458,8 +2458,33 @@ func main() {
       return
     }
     branch := string(data)
-    cur_val2 = base_dir + cur_val3 + "/" + branch + "/cur_added.txt"
-    err = os.WriteFile(cur_val2, []byte(""), 0644)
+    cur_val2 = base_dir + cur_val3 + "/" + branch
+    cur_val3 = cur_val2
+    cur_val2 += "/sas"
+    entries, err := os.ReadDir(cur_val2)
+    cur_val2 += "/"
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    for _, vl := range entries {
+      if vl.IsDir() {
+        err = os.RemoveAll(cur_val2 + vl.Name())
+        if err != nil {
+          fmt.Println("Error:", err)
+          return
+        }
+      } else {
+        err = os.Remove(cur_val2 + vl.Name())
+        if err != nil {
+          fmt.Println("Error:", err)
+          return
+        }
+      }
+    }
+    err = os.WriteFile(cur_val3 + "/cur_added.txt", 
+                       []byte(cur_dir + "\n"), 
+                       0644)
     if err != nil {
       fmt.Println("Error:", err)
       return
