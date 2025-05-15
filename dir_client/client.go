@@ -252,19 +252,23 @@ func DisplayDiff(file1 *string, file2 *string, sep *string) error {
   var i2 int = 0
   n := len(sl_str_data1)
   n2 := len(sl_str_data2)
-  for comp && i < n2 {
+  for i < n2 && comp {
     datab = sl_str_data2[i]
-    dataa = sl_str_data1[i]
-    for datab != dataa && i2 < n {
+    dataa = sl_str_data1[i2]
+    i2++
+    for i2 < n && datab != dataa {
       fmt.Printf("%v%v -\n", dataa, *sep)
-      i2++
       dataa = sl_str_data1[i2]
+      i2++
     }
     comp = (datab == dataa)
     if comp {
       fmt.Printf("%v%v%v\n", dataa, *sep, datab)
     } else {
       fmt.Printf("%v+ %v\n", *sep, datab)
+    }
+    if i2 == n {
+      break
     }
     i++
   }
@@ -276,7 +280,7 @@ func DisplayDiff(file1 *string, file2 *string, sep *string) error {
   if comp {
     for i2 < n {
       dataa = sl_str_data1[i2]
-      fmt.Printf("%v- %v\n", dataa, *sep)
+      fmt.Printf("%v%v -\n", dataa, *sep)
       i2++
     }
   }
@@ -1531,13 +1535,14 @@ func main() {
     }
     cur_val = ""
     for i = 0; i < len(str_data); i++ {
-      if str_data[i] == '\n' {
+      if str_data[i] != '\n' {
         cur_val += string(str_data[i])
       } else {
         commit_hist = append(commit_hist, cur_val)
         cur_val = ""
       }
     }
+    fmt.Println("okok", cur_val2)
     int_commit1 := StringToInt(commit1)
     if int_commit1 < 0 {
       fmt.Println("Error: the first commit begins at 0")
@@ -1556,7 +1561,9 @@ func main() {
       fmt.Println("Error: the last commit is", len(commit_hist) - 1)
       return
     }
-    cur_val4 = cur_val2 + "/" + commit_hist[int_commit2] + "/added.txt"
+    cur_val4 = cur_val2 + "/data/" + commit_hist[int_commit2] + "/added.txt"
+    fmt.Println(commit_hist[int_commit2])
+    fmt.Println(cur_val4)
     cur_val = cur_dir + "/" + content1
     is_valid, err = ExistDirFile(&cur_val, &cur_val4)
     if err != nil {
@@ -1567,7 +1574,7 @@ func main() {
       fmt.Println("Error: the file " + content1 + " does not exist in fisrt commit provided")
       return
     }
-    cur_val2 += ("/" + commit_hist[int_commit1] + "/added.txt")
+    cur_val2 += ("/data/" + commit_hist[int_commit1] + "/added.txt")
     cur_val = cur_dir + "/" + content2
     is_valid, err = ExistDirFile(&cur_val, &cur_val2)
     if err != nil {
@@ -1578,8 +1585,8 @@ func main() {
       fmt.Println("Error: the file " + content2 + " does not exist in second commit provided")
       return
     }
-    cur_val4 = ref_cur_val2 + "/" + commit_hist[int_commit2] + "/" + content2
-    ref_cur_val2 += "/" + commit_hist[int_commit1] + "/" + content1
+    cur_val4 = ref_cur_val2 + "/data/" + commit_hist[int_commit2] + "/data/" + content2
+    ref_cur_val2 += "/data/" + commit_hist[int_commit1] + "/data/" + content1
     cur_sep := " | "
     err = DisplayDiff(&ref_cur_val2, &cur_val4, &cur_sep)
     if err != nil {
