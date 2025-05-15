@@ -12,6 +12,7 @@ import (
   //"crypto/rand"
   //"crypto/rsa"
   "crypto/sha256"
+  //"net"
 )
 
 var base_dir string = "/home/kvv/ssd1/NexUs/dir_client/"
@@ -639,9 +640,7 @@ func deCompressCopyDir(src *string, dst *string) error {
   return nil
 }
 
-func main() {
-
-  
+func main() { 
 
   arg_v := os.Args
   var err error
@@ -665,6 +664,43 @@ func main() {
   }
 
   frst_arg := os.Args[1]
+
+  if frst_arg == "help" {
+    fmt.Println("Commands list:")
+    fmt.Println("'init' is to initiate a repo, this will create a NexUs project for the current directory you are calling it from, this will automatically create a 'main' branch")
+    fmt.Println("Example: nexus init\n")
+    fmt.Println("'sethost' will bind a server ip and port to your current NexUs project")
+    fmt.Println("Example: nexus sethost 12.12.12.12:5600\n")
+    fmt.Println("'hostinfo' will tell you the host informations for your current NexUs project")
+    fmt.Println("Example: nexus hostinfo\n")
+    fmt.Println("'branchnew' is to create a branch, this will copy all the current files and directories from your current branch to a new one that you can modify without repercusion on other branches")
+    fmt.Println("Example: nexus branchnew main2\n")
+    fmt.Println("'branchlist' this will list all the branch available for your NexUs project")
+    fmt.Println("Example: nexus branchlist\n")
+    fmt.Println("'branchmy' this will print your current branch")
+    fmt.Println("Example: nexus branchmy\n")
+    fmt.Println("'branchswitch' will switch over the specified branch, bringing the last content of its commit to your current directory")
+    fmt.Println("Example: nexus branchswitch main2\n")
+    fmt.Println("'branchrm' will delete a branch")
+    fmt.Println("Example: nexus branchrm main2\n")
+    fmt.Println("'add' is to add files or directory to a temporary NexUs location called 'sas' before commiting")
+    fmt.Println("Example: nexus add a.txt dira dira/*\n")
+    fmt.Println("'rm' is to remove files or folders from your current directory and the 'sas'")
+    fmt.Println("Example: nexus rm a.txt\n")
+    fmt.Println("'commit' is to save the changes made to your project, after adding them into 'sas'")
+    fmt.Println(`Example: nexus commit "message of the commit"` + "\n")
+    fmt.Println("'commitlist' this will list all commit for the current branch, in chronological order")
+    fmt.Println("Example: nexus commitlist\n")
+    fmt.Println("'commitlast' this will print the last commit")
+    fmt.Println("Example: nexus commitlast\n")
+    fmt.Println("'commitmsg x' where x specifies the commit number, prints the message of thespecified commit")
+    fmt.Println("Example: nexus commitmsg 5, will print the commit message of the fith commit\n")
+    fmt.Println("'commitdiff x1 x2 file file' will print the diff between the specified file through 2 differents commits")
+    fmt.Println("Example: commitdiff 2 3 a.txt a.txt ,will print the content diff between the content of a.txt through the third commit and the fourth commit\n")
+    fmt.Println("'commitstructdiff x1 x2' will print the difference between the filestructure of 2 specified commits")
+    fmt.Println("Example: nexus commitstructdiff 2 6 ,will print the filestructure difference between the third and the seventh commit\n")
+    return
+  }
 
   if frst_arg == "init" {
     if n > 2 {
@@ -1900,7 +1936,7 @@ func main() {
     return
   }
 
-  if frst_arg == "commmitmsg" {
+  if frst_arg == "commitmsg" {
     if n < 3 {
       fmt.Println("Error: not enough argument")
       return
@@ -1935,7 +1971,7 @@ func main() {
       return
     }
     branch := string(data)
-    cur_val2 = base_dir + cur_val3 + branch
+    cur_val2 = base_dir + cur_val3 + "/" + branch
     data, err = os.ReadFile(cur_val2 + "/commits.txt")
     if err != nil {
       fmt.Println("Error:", err)
@@ -1943,9 +1979,10 @@ func main() {
     }
     str_data = string(data)
     cur_val = ""
+    i = 0
     for i < len(str_data) {
-      if cur_val[i] != '\n' {
-        cur_val += string(cur_val[i])
+      if str_data[i] != '\n' {
+        cur_val += string(str_data[i])
       } else {
         if i3 == i2 {
           if cur_val == "" {
@@ -1959,7 +1996,7 @@ func main() {
       }
       i++
     }
-    data, err = os.ReadFile(cur_val2 + "/" + cur_val + "/message.txt")
+    data, err = os.ReadFile(cur_val2 + "/data/" + cur_val + "/message.txt")
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -1999,15 +2036,15 @@ func main() {
     return
   }
 
-  //if frst_arg == "push" {
-
+  //if frst_arg == "send" {
+  //  
   //}
 
   //if frst_arg == "sync" {
 
   //}
 
-  fmt.Println("Error: command not found")
+  fmt.Println("Error: command not found, try 'help' command")
   return
 }
 
