@@ -547,6 +547,7 @@ func TreeSum(src string) ([32]byte, error) {
         }
         all_data = append(all_data, data...)
       }
+      all_data = append(all_data, []byte(v.Name())...)
     }
     vec_dirname = vec_dirname[:len(vec_dirname) - 1]
     n -= 1
@@ -906,13 +907,6 @@ func main() {
         }
       }
     }
-    err = os.WriteFile(base_dir + cur_val3 + "/" + branch + "/is_pushed.txt",
-                       []byte("0"),
-                       0644)
-    if err != nil {
-      fmt.Println("Error:", err)
-      return
-    }
     return
   }
 
@@ -1096,6 +1090,42 @@ func main() {
     err = os.WriteFile(base_dir + cur_val3 + "/cur_branch.txt", 
                        []byte(swtch_branch), 
                        0644)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    cur_val2 = base_dir + cur_val3 + "/" + swtch_branch
+    data, err = os.ReadFile(cur_val2 + "/cur_commit.txt")
+    str_data = string(data)
+    if str_data == "" {
+      fmt.Println("No commit has never been taken in", swtch_branch)
+      return
+    }
+    cur_val2 += ("/data/" + str_data + "/data")
+    entries, err := os.ReadDir(cur_dir)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    for _, vl := range entries {
+      fmt.Println("filename:", vl.Name())
+      if vl.IsDir() {
+        err = os.RemoveAll(vl.Name())
+        if err != nil {
+          fmt.Println("Error:", err)
+          return
+        }
+      } else {
+        err = os.Remove(vl.Name())
+        if err != nil {
+          fmt.Println("Error:", err)
+          return
+        }
+      }
+    }
+    fmt.Println("source branch:", cur_val2)
+    fmt.Println("cur_dir:", cur_dir)
+    err = deCompressCopyDir(&cur_val2, &cur_dir)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -1773,8 +1803,8 @@ func main() {
       return
     }
     str_data = string(data)
-    if str_data != "0" {
-      fmt.Println("Error: no data has been added since last commit or no data has ever been comited")
+    if str_data != "1" {
+      fmt.Println("Error: no data has been pushed since last commit or no data has ever been comited")
       return
     }
     commit, err := TreeSum(cur_val2 + "/sas/.")
@@ -1783,7 +1813,7 @@ func main() {
     is_valid, err = ExistDirFile(&str_commit, &cur_val4)
     fmt.Println("commit hash:", str_commit)
     if is_valid {
-      fmt.Println("Error: the exacts content are found in the previous commit " + str_commit, " consider doing a 'commitgback' if you want to make this your last commit, or that's already your last commit, check this by doing 'commitcur'")
+      fmt.Println("Error: the exacts content are found in the previous commit " + str_commit, " consider doing a 'commitgback' if you want to make this your last commit, or that's already your last commit, check this by doing 'commitlast'")
       return
     }
     if err != nil {
@@ -1859,6 +1889,13 @@ func main() {
       return
     }
     err = os.WriteFile(cur_val2 + "/is_pushed.txt", []byte("0"), 0644)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    err = os.WriteFile(cur_val2 + "/cur_commit.txt", 
+                      []byte(str_commit), 
+                      0644)
     if err != nil {
       fmt.Println("Error:", err)
       return
