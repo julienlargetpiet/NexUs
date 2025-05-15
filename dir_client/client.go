@@ -2287,7 +2287,6 @@ func main() {
         all_args = append(all_args, tmp_val)
       }
     }
-    fmt.Println("ok", all_args)
     for i = 0; i < len(all_args); i++ {
       cur_val4 = all_args[i]
       file = cur_dir + "/" + cur_val4
