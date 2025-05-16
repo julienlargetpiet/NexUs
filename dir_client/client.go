@@ -2574,12 +2574,63 @@ func main() {
     return
   }
 
+  //if frst_arg == "sasstructdiff" {
+  //  if n < 3 {
+  //    fmt.Println("Error: not enough argument")
+  //    return
+  //  }
+  //  if n < 3 {
+  //    fmt.Println("Error: too much argument")
+  //    return
+  //  }
+  //  is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+  //  if err != nil {
+  //    fmt.Println("Error:", err)
+  //    return
+  //  }
+  //  if !is_valid {
+  //    fmt.Println("Error: repo not initialized")
+  //    return
+  //  }
+  //  cur_val3 = ""
+  //  for i = 0; i < len(cur_dir); i++ {
+  //    if cur_dir[i] == '/' {
+  //      cur_val3 += "_"
+  //    } else {
+  //      cur_val3 += string(cur_dir[i])
+  //    }
+  //  }
+  //  data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+  //  if err != nil {
+  //    fmt.Println("Error:", err)
+  //    return
+  //  }
+  //  branch := string(data)
+  //  cur_val2 = base_dir + cur_val3 + "/" + branch
+  //  data, err = os.ReadFile(cur_val2 + "/commits.txt")
+  //  if err != nil {
+  //    fmt.Println("Error:", err)
+  //    return
+  //  }
+  //  i2 = StringToInt(os.Args[2])
+  //  str_data = string(data)
+  //  cur_val = ""
+  //  for i = 0; i < len(str_data); i++ {
+  //    if str_data[i] != '\n' {
+  //      cur_val += string(str_data[i])
+  //    } else {
+  //      
+  //      cur_val = ""
+  //    }
+  //  }
+  //}
+
   if frst_arg == "sasdiff" {
-    if n < 3 {
+    if n < 4 {
       fmt.Println("Error: not enough argument")
       return
     }
-    if n < 3 {
+    if n > 4 {
       fmt.Println("Error: too much argument")
       return
     }
