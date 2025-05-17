@@ -774,6 +774,8 @@ func main() {
     fmt.Println("Example: nexus branchswitch main2\n")
     fmt.Println("'branchrm' will delete a branch")
     fmt.Println("Example: nexus branchrm main2\n")
+    fmt.Println("'branchbring branchname file' will bring a file from another branch")
+    fmt.Println("Example: nexus branchbring main2 file.txt ,will bring file.txt from main2 to your current branch")
     fmt.Println("'add' is to add files or directory to a temporary NexUs location called 'sas' before commiting")
     fmt.Println("Example: nexus add a.txt dira dira/*\n")
     fmt.Println("'addsee' prints the current content addes for next commit")
