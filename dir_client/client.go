@@ -8,11 +8,14 @@ import (
   "compress/zlib"
   "path/filepath"
   "encoding/hex"
-  //"crypto"
-  //"crypto/rand"
-  //"crypto/rsa"
+  "encoding/pem"
+  "encoding/binary"
+  "crypto"
+  "crypto/x509"
+  "crypto/rand"
+  "crypto/rsa"
   "crypto/sha256"
-  //"net"
+  "net"
 )
 
 var base_dir string = "/home/kvv/ssd1/NexUs/dir_client/"
@@ -787,6 +790,8 @@ func main() {
     fmt.Println("Example: nexus commitlist\n")
     fmt.Println("'commitlast' this will print the last commit")
     fmt.Println("Example: nexus commitlast\n")
+    fmt.Println("'commitgoback x' Go back to a previous commit")
+    fmt.Println("Example: nexus commitgoback 2 ,will go back to the third commit")
     fmt.Println("'commitmsg x' where x specifies the commit number, prints the message of thespecified commit")
     fmt.Println("Example: nexus commitmsg 5, will print the commit message of the fith commit\n")
     fmt.Println("'commitdiff x1 x2 file file' will print the diff between the specified file through 2 differents commits")
@@ -2745,9 +2750,138 @@ func main() {
     return
   }
 
-  //if frst_arg == "send" {
-  //  
-  //}
+  if frst_arg == "send" {
+     if n > 2 {
+      fmt.Println("Error: too much argument")
+      return
+    }
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + "/privateKey.pem")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if len(data) == 0 {
+      fmt.Println("Error: 'privateKey.pem' has no private key, make sure to import the private key from the NexUs server")
+      return
+    }
+    block, _ := pem.Decode(data)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if block == nil {
+      fmt.Println("Error: failed to decode the private key")
+      return
+    }
+    if block.Type != "RSA PRIVATE KEY" {
+      fmt.Println("Error: not decoding an RSA private key")
+      return
+    }
+    private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/host_info.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if len(data) == 0 {
+      fmt.Println("Error: no host info provided")
+      return
+    }
+    host_info := string(data)
+    conn, err := net.Dial("tcp", host_info)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    binary.Write(conn, binary.LittleEndian, 0)
+    var hash_slice []byte
+    hash_buffr := sha256.Sum256([]byte(cur_val3))
+    hash_slice = hash_buffr[:]
+    sign, err := rsa.SignPKCS1v15(rand.Reader, 
+                               private_key, 
+                               crypto.SHA256,
+                               hash_slice)
+    if err != nil {
+      fmt.Println(err)
+      return
+    }
+    binary.Write(conn, binary.LittleEndian, sign)
+    tmp_val := []byte(cur_val3)
+    cur_len := int64(len(tmp_val))
+    binary.Write(conn, binary.LittleEndian, cur_len)
+    binary.Write(conn, binary.LittleEndian, tmp_val)
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    cur_len = int64(len(data))
+    hash_buffr = sha256.Sum256(data)
+    hash_slice = hash_buffr[:]
+    sign, err = rsa.SignPKCS1v15(rand.Reader, 
+                               private_key, 
+                               crypto.SHA256,
+                               hash_slice)
+    if err != nil {
+      fmt.Println(err)
+      return
+    }
+    binary.Write(conn, binary.LittleEndian, sign)
+    binary.Write(conn, binary.LittleEndian, cur_len)
+    binary.Write(conn, binary.LittleEndian, data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch
+    data, err = os.ReadFile(cur_val2 + "/commits.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    cur_len = int64(len(data))
+    hash_buffr = sha256.Sum256([]byte(branch))
+    hash_slice = hash_buffr[:]
+    sign, err = rsa.SignPKCS1v15(rand.Reader, 
+                               private_key, 
+                               crypto.SHA256,
+                               hash_slice)
+    if err != nil {
+      fmt.Println(err)
+      return
+    }
+    binary.Write(conn, binary.LittleEndian, sign)
+    binary.Write(conn, binary.LittleEndian, cur_len)  
+    binary.Write(conn, binary.LittleEndian, data)
+    cur_bfr := make([]byte, 1024)
+    _, err = conn.Read(cur_bfr)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if string(cur_bfr) == "desync" {
+      fmt.Println("Error: you are desync from the NexUs server, run 'sync' to be synchronized")
+      return
+    }
+    return
+  }
 
   //if frst_arg == "sync" {
 
