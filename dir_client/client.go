@@ -695,6 +695,7 @@ func TreeSend(conn *net.Conn, src string) (error) {
   }
   hash_buffr = sha256.Sum256(end_val)
   hash_sl = hash_buffr[:]
+  
   err = binary.Write(*conn, 
                      binary.LittleEndian, 
                      hash_sl)
