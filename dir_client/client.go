@@ -149,62 +149,6 @@ func StringToInt(x string) int {
   return rtn_val
 }
 
-func Union(f1 *string, f2 *string) ([]string, error) {
-  var frst_sl []string
-  var scd_sl []string
-  var cur_val string
-  var rtn_sl []string
-  data, err := os.ReadFile(*f1)
-  if err != nil {
-    return rtn_sl, err
-  }
-  str_data := string(data)
-  cur_val = ""
-  var i int = 0
-  str_data += "\n"
-  for i < len(str_data) {
-    if str_data[i] != '\n' {
-      cur_val += string(str_data[i])
-    } else {
-      frst_sl = append(frst_sl, cur_val)
-      cur_val = ""
-    }
-    i++
-  }
-  data, err = os.ReadFile(*f2)
-  if err != nil {
-    return rtn_sl, err
-  }
-  str_data = string(data)
-  i = 0
-  cur_val = ""
-  for i < len(str_data) {
-    if str_data[i] != '\n' {
-      cur_val += string(str_data[i])
-    } else {
-      scd_sl = append(scd_sl, cur_val)
-      cur_val = ""
-    }
-    i++
-  }
-  var i2 int
-  var n2 = len(scd_sl)
-  i = 0
-  for i < len(frst_sl) {
-    i2 = 0
-    cur_val = frst_sl[i]
-    for i2 < n2 {
-      if cur_val == scd_sl[i2] {
-        rtn_sl = append(rtn_sl, cur_val)
-        break
-      }
-      i2++
-    }
-    i++
-  }
-  return rtn_sl, nil
-}
-
 func DisplayDiff(file1 *string, file2 *string, sep *string) error {
   var dataa string
   var datab string
@@ -614,6 +558,90 @@ func Tree(src string) ([]string, error) {
     n -= 1
   }
   return rtn_data, nil
+}
+
+func TreeSend(conn *net.Conn, src string) (error) {
+  var cur_path string
+  var cur_path_dir_found string
+  var vec_dirname = []string{src}
+  var n int = 0
+  var file_val int32 = 0
+  var dir_val int32 = 1
+  var end_val int32 = 2
+  var cur_send []byte
+  var err error
+  for n > -1 {
+    cur_path = vec_dirname[n]
+    entries, err := os.ReadDir(cur_path)
+    for _, v := range entries {
+      if v.IsDir() {
+        cur_path_dir_found = cur_path + "/" + v.Name()
+        vec_dirname = append([]string{cur_path_dir_found}, vec_dirname...)
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           dir_val)
+        if err != nil {
+          return err
+        }
+        cur_send = []byte(cur_path_dir_found)
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           int64(len(cur_send)))
+        if err != nil {
+          return err
+        }
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           cur_send)
+        if err != nil {
+          return err
+        }
+        n += 1
+      } else {
+        if err != nil {
+          return err
+        }
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           file_val)
+        if err != nil {
+          return err
+        }
+        cur_send = []byte(cur_path_dir_found)
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           int64(len(cur_send)))
+        if err != nil {
+          return err
+        }
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           cur_send)
+        if err != nil {
+          return err
+        }
+        cur_send, err = os.ReadFile(cur_path + "/" + v.Name())
+        if err != nil {
+          return err
+        }
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           cur_send)
+        if err != nil {
+          return err
+        } 
+      }
+    }
+    vec_dirname = vec_dirname[:len(vec_dirname) - 1]
+    n -= 1
+  }
+  err = binary.Write(*conn, 
+                     binary.LittleEndian, 
+                     end_val)
+  if err != nil {
+    return err
+  } 
+  return nil
 }
 
 func TreeSum(src string) ([32]byte, error) {
@@ -2774,6 +2802,33 @@ func main() {
         cur_val3 += string(cur_dir[i])
       }
     }
+    data, err = os.ReadFile(base_dir + "/pubKey.pem")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if len(data) == 0 {
+      fmt.Println("Error: 'pubKey.pem' has no pub key, make sure to import the standard public key from the NexUs server")
+      return
+    }
+    block, _ := pem.Decode(data)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if block == nil {
+      fmt.Println("Error: failed to decode the private key")
+      return
+    }
+    if block.Type != "RSA PRIVATE KEY" {
+      fmt.Println("Error: not decoding an RSA private key")
+      return
+    }
+    pub_key, err := x509.ParsePKCS1PublicKey(block.Bytes)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
     data, err = os.ReadFile(base_dir + "/privateKey.pem")
     if err != nil {
       fmt.Println("Error:", err)
@@ -2783,7 +2838,7 @@ func main() {
       fmt.Println("Error: 'privateKey.pem' has no private key, make sure to import the private key from the NexUs server")
       return
     }
-    block, _ := pem.Decode(data)
+    block, _ = pem.Decode(data)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -2838,6 +2893,7 @@ func main() {
       fmt.Println("Error:", err)
       return
     }
+    branch := string(data)
     cur_len = int64(len(data))
     hash_buffr = sha256.Sum256(data)
     hash_slice = hash_buffr[:]
@@ -2872,8 +2928,27 @@ func main() {
     binary.Write(conn, binary.LittleEndian, sign)
     binary.Write(conn, binary.LittleEndian, cur_len)  
     binary.Write(conn, binary.LittleEndian, data)
-    cur_bfr := make([]byte, 1024)
+    cur_bfr := make([]byte, 6)
+    sign_buffr := make([]byte, 256)
+    _, err = conn.Read(sign_buffr)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    sign = sign_buffr[:]
     _, err = conn.Read(cur_bfr)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    hash_buffr = sha256.Sum256(cur_bfr)
+    hash_sl := hash_buffr[:]
+    err = rsa.VerifyPKCS1v15(pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -2882,10 +2957,33 @@ func main() {
       fmt.Println("Error: you are desync from the NexUs server, run 'sync' to be synchronized")
       return
     }
+    data, err = os.ReadFile(cur_val2 + "/cur_commit.txt")
+    if err != nil {
+      conn.Close()
+      return
+    }
+    cur_commit := string(data)
+    err = TreeSend(&conn, cur_val2 + "/" + cur_commit)
+    if err != nil {
+      conn.Close()
+      return
+    }
     return
   }
 
   //if frst_arg == "sync" {
+
+  //}
+
+  //if frst_arg == "get" {
+
+  //}
+
+  //if frst_arg == "getpubbranch" {
+
+  //}
+
+  //if frst_arg == "getallbranch" {
 
   //}
 
