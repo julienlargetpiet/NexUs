@@ -565,18 +565,29 @@ func TreeSend(conn *net.Conn, src string) (error) {
   var cur_path_dir_found string
   var vec_dirname = []string{src}
   var n int = 0
-  var file_val int32 = 0
-  var dir_val int32 = 1
-  var end_val int32 = 2
+  var file_val = []byte{0}
+  var dir_val = []byte{1}
+  var end_val = []byte{2}
   var cur_send []byte
+  var cur_send_len []byte
   var err error
+  var hash_buffr [32]byte
+  var hash_sl []byte
   for n > -1 {
     cur_path = vec_dirname[n]
     entries, err := os.ReadDir(cur_path)
     for _, v := range entries {
       if v.IsDir() {
-        cur_path_dir_found = cur_path + "/" + v.Name()
+        cur_path_dir_found = cur_path + "/" + v.Name() 
         vec_dirname = append([]string{cur_path_dir_found}, vec_dirname...)
+        hash_buffr = sha256.Sum256(dir_val)
+        hash_sl = hash_buffr[:]
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           hash_sl)
+        if err != nil {
+          return err
+        }
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
                            dir_val)
@@ -584,9 +595,26 @@ func TreeSend(conn *net.Conn, src string) (error) {
           return err
         }
         cur_send = []byte(cur_path_dir_found)
+        cur_send_len = []byte{byte(len(cur_send))}
+        hash_buffr = sha256.Sum256(cur_send_len)
+        hash_sl = hash_buffr[:]
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
-                           int64(len(cur_send)))
+                           hash_sl)
+        if err != nil {
+          return err
+        }
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           cur_send_len)
+        if err != nil {
+          return err
+        }
+        hash_buffr = sha256.Sum256(cur_send)
+        hash_sl = hash_buffr[:]
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           hash_sl)
         if err != nil {
           return err
         }
@@ -598,6 +626,11 @@ func TreeSend(conn *net.Conn, src string) (error) {
         }
         n += 1
       } else {
+        hash_buffr = sha256.Sum256(file_val)
+        hash_sl = hash_buffr[:]
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           hash_sl)
         if err != nil {
           return err
         }
@@ -608,9 +641,26 @@ func TreeSend(conn *net.Conn, src string) (error) {
           return err
         }
         cur_send = []byte(cur_path_dir_found)
+        cur_send_len = []byte{byte(len(cur_send))}
+        hash_buffr = sha256.Sum256(cur_send_len)
+        hash_sl = hash_buffr[:]
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
-                           int64(len(cur_send)))
+                           hash_sl)
+        if err != nil {
+          return err
+        }
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           cur_send_len)
+        if err != nil {
+          return err
+        }
+        hash_buffr = sha256.Sum256(cur_send)
+        hash_sl = hash_buffr[:]
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           hash_sl)
         if err != nil {
           return err
         }
@@ -624,6 +674,14 @@ func TreeSend(conn *net.Conn, src string) (error) {
         if err != nil {
           return err
         }
+        hash_buffr = sha256.Sum256(cur_send)
+        hash_sl = hash_buffr[:]
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           hash_sl)
+        if err != nil {
+          return err
+        }
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
                            cur_send)
@@ -634,6 +692,14 @@ func TreeSend(conn *net.Conn, src string) (error) {
     }
     vec_dirname = vec_dirname[:len(vec_dirname) - 1]
     n -= 1
+  }
+  hash_buffr = sha256.Sum256(end_val)
+  hash_sl = hash_buffr[:]
+  err = binary.Write(*conn, 
+                     binary.LittleEndian, 
+                     hash_sl)
+  if err != nil {
+    return err
   }
   err = binary.Write(*conn, 
                      binary.LittleEndian, 
