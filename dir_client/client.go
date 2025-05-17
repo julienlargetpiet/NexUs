@@ -560,7 +560,9 @@ func Tree(src string) ([]string, error) {
   return rtn_data, nil
 }
 
-func TreeSend(conn *net.Conn, src string) (error) {
+func TreeSend(conn *net.Conn, 
+              src string, 
+              private_key *rsa.PrivateKey) (error) {
   var cur_path string
   var cur_path_dir_found string
   var vec_dirname = []string{src}
@@ -573,6 +575,7 @@ func TreeSend(conn *net.Conn, src string) (error) {
   var err error
   var hash_buffr [32]byte
   var hash_sl []byte
+  var sign_sl []byte
   for n > -1 {
     cur_path = vec_dirname[n]
     entries, err := os.ReadDir(cur_path)
@@ -582,9 +585,16 @@ func TreeSend(conn *net.Conn, src string) (error) {
         vec_dirname = append([]string{cur_path_dir_found}, vec_dirname...)
         hash_buffr = sha256.Sum256(dir_val)
         hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
-                           hash_sl)
+                           sign_sl)
         if err != nil {
           return err
         }
@@ -598,9 +608,16 @@ func TreeSend(conn *net.Conn, src string) (error) {
         cur_send_len = []byte{byte(len(cur_send))}
         hash_buffr = sha256.Sum256(cur_send_len)
         hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
-                           hash_sl)
+                           sign_sl)
         if err != nil {
           return err
         }
@@ -612,9 +629,16 @@ func TreeSend(conn *net.Conn, src string) (error) {
         }
         hash_buffr = sha256.Sum256(cur_send)
         hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
-                           hash_sl)
+                           sign_sl)
         if err != nil {
           return err
         }
@@ -628,9 +652,16 @@ func TreeSend(conn *net.Conn, src string) (error) {
       } else {
         hash_buffr = sha256.Sum256(file_val)
         hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
-                           hash_sl)
+                           sign_sl)
         if err != nil {
           return err
         }
@@ -644,9 +675,16 @@ func TreeSend(conn *net.Conn, src string) (error) {
         cur_send_len = []byte{byte(len(cur_send))}
         hash_buffr = sha256.Sum256(cur_send_len)
         hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
-                           hash_sl)
+                           sign_sl)
         if err != nil {
           return err
         }
@@ -658,9 +696,16 @@ func TreeSend(conn *net.Conn, src string) (error) {
         }
         hash_buffr = sha256.Sum256(cur_send)
         hash_sl = hash_buffr[:]
+        sign_sl, err := rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
-                           hash_sl)
+                           sign_sl)
         if err != nil {
           return err
         }
@@ -676,9 +721,16 @@ func TreeSend(conn *net.Conn, src string) (error) {
         }
         hash_buffr = sha256.Sum256(cur_send)
         hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
-                           hash_sl)
+                           sign_sl)
         if err != nil {
           return err
         }
@@ -695,10 +747,17 @@ func TreeSend(conn *net.Conn, src string) (error) {
   }
   hash_buffr = sha256.Sum256(end_val)
   hash_sl = hash_buffr[:]
-  
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                             private_key, 
+                             crypto.SHA256,
+                             hash_sl)
+  if err != nil {
+    return err
+  }
   err = binary.Write(*conn, 
                      binary.LittleEndian, 
-                     hash_sl)
+                     sign_sl)
   if err != nil {
     return err
   }
@@ -3030,7 +3089,9 @@ func main() {
       return
     }
     cur_commit := string(data)
-    err = TreeSend(&conn, cur_val2 + "/" + cur_commit)
+    err = TreeSend(&conn, 
+                   cur_val2 + "/" + cur_commit, 
+                   private_key)
     if err != nil {
       conn.Close()
       return
