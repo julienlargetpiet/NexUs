@@ -564,7 +564,7 @@ func TreeSend(conn *net.Conn,
               src string, 
               private_key *rsa.PrivateKey) (error) {
   var cur_path string
-  var cur_path_dir_found string
+  var cur_path_found string
   var vec_dirname = []string{src}
   var n int = 0
   var file_val = []byte{0}
@@ -580,8 +580,8 @@ func TreeSend(conn *net.Conn,
     cur_path = vec_dirname[n]
     entries, err := os.ReadDir(cur_path)
     for _, v := range entries {
-      cur_path_dir_found = cur_path + "/" + v.Name()
-      cur_send = []byte(cur_path_dir_found)
+      cur_path_found = cur_path + "/" + v.Name()
+      cur_send = []byte(cur_path_found)
       cur_send_len = []byte{byte(len(cur_send))}
       hash_buffr = sha256.Sum256(cur_send_len)
       hash_sl = hash_buffr[:]
@@ -626,7 +626,7 @@ func TreeSend(conn *net.Conn,
         return err
       }
       if v.IsDir() {
-        vec_dirname = append([]string{cur_path_dir_found}, vec_dirname...)
+        vec_dirname = append([]string{cur_path_found}, vec_dirname...)
         hash_buffr = sha256.Sum256(dir_val)
         hash_sl = hash_buffr[:]
         sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
@@ -671,7 +671,29 @@ func TreeSend(conn *net.Conn,
         if err != nil {
           return err
         }
-        cur_send, err = os.ReadFile(cur_path_dir_found)
+        cur_send, err = os.ReadFile(cur_path_found)
+        if err != nil {
+          return err
+        }
+        cur_send_len = []byte{byte(len(cur_send))}
+        hash_buffr = sha256.Sum256(cur_send_len)
+        hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           sign_sl)
+        if err != nil {
+          return err
+        }
+        err = binary.Write(*conn, 
+                           binary.LittleEndian, 
+                           cur_send_len)
         if err != nil {
           return err
         }
