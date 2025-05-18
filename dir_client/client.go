@@ -2943,11 +2943,11 @@ func main() {
       return
     }
     if block == nil {
-      fmt.Println("Error: failed to decode the private key")
+      fmt.Println("Error: failed to decode the public key")
       return
     }
-    if block.Type != "RSA PRIVATE KEY" {
-      fmt.Println("Error: not decoding an RSA private key")
+    if block.Type != "RSA PUBLIC KEY" {
+      fmt.Println("Error: not decoding an RSA public key")
       return
     }
     pub_key, err := x509.ParsePKCS1PublicKey(block.Bytes)
