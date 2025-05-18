@@ -580,8 +580,52 @@ func TreeSend(conn *net.Conn,
     cur_path = vec_dirname[n]
     entries, err := os.ReadDir(cur_path)
     for _, v := range entries {
+      cur_path_dir_found = cur_path + "/" + v.Name()
+      cur_send = []byte(cur_path_dir_found)
+      cur_send_len = []byte{byte(len(cur_send))}
+      hash_buffr = sha256.Sum256(cur_send_len)
+      hash_sl = hash_buffr[:]
+      sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                 private_key, 
+                                 crypto.SHA256,
+                                 hash_sl)
+      if err != nil {
+        return err
+      }
+      err = binary.Write(*conn, 
+                         binary.LittleEndian, 
+                         sign_sl)
+      if err != nil {
+        return err
+      }
+      err = binary.Write(*conn, 
+                         binary.LittleEndian, 
+                         cur_send_len)
+      if err != nil {
+        return err
+      }
+      hash_buffr = sha256.Sum256(cur_send)
+      hash_sl = hash_buffr[:]
+      sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                 private_key, 
+                                 crypto.SHA256,
+                                 hash_sl)
+      if err != nil {
+        return err
+      }
+      err = binary.Write(*conn, 
+                         binary.LittleEndian, 
+                         sign_sl)
+      if err != nil {
+        return err
+      }
+      err = binary.Write(*conn, 
+                         binary.LittleEndian, 
+                         cur_send)
+      if err != nil {
+        return err
+      }
       if v.IsDir() {
-        cur_path_dir_found = cur_path + "/" + v.Name() 
         vec_dirname = append([]string{cur_path_dir_found}, vec_dirname...)
         hash_buffr = sha256.Sum256(dir_val)
         hash_sl = hash_buffr[:]
@@ -601,50 +645,6 @@ func TreeSend(conn *net.Conn,
         err = binary.Write(*conn, 
                            binary.LittleEndian, 
                            dir_val)
-        if err != nil {
-          return err
-        }
-        cur_send = []byte(cur_path_dir_found)
-        cur_send_len = []byte{byte(len(cur_send))}
-        hash_buffr = sha256.Sum256(cur_send_len)
-        hash_sl = hash_buffr[:]
-        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
-                                   private_key, 
-                                   crypto.SHA256,
-                                   hash_sl)
-        if err != nil {
-          return err
-        }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           sign_sl)
-        if err != nil {
-          return err
-        }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           cur_send_len)
-        if err != nil {
-          return err
-        }
-        hash_buffr = sha256.Sum256(cur_send)
-        hash_sl = hash_buffr[:]
-        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
-                                   private_key, 
-                                   crypto.SHA256,
-                                   hash_sl)
-        if err != nil {
-          return err
-        }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           sign_sl)
-        if err != nil {
-          return err
-        }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           cur_send)
         if err != nil {
           return err
         }
@@ -671,51 +671,7 @@ func TreeSend(conn *net.Conn,
         if err != nil {
           return err
         }
-        cur_send = []byte(cur_path_dir_found)
-        cur_send_len = []byte{byte(len(cur_send))}
-        hash_buffr = sha256.Sum256(cur_send_len)
-        hash_sl = hash_buffr[:]
-        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
-                                   private_key, 
-                                   crypto.SHA256,
-                                   hash_sl)
-        if err != nil {
-          return err
-        }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           sign_sl)
-        if err != nil {
-          return err
-        }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           cur_send_len)
-        if err != nil {
-          return err
-        }
-        hash_buffr = sha256.Sum256(cur_send)
-        hash_sl = hash_buffr[:]
-        sign_sl, err := rsa.SignPKCS1v15(rand.Reader, 
-                                   private_key, 
-                                   crypto.SHA256,
-                                   hash_sl)
-        if err != nil {
-          return err
-        }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           sign_sl)
-        if err != nil {
-          return err
-        }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           cur_send)
-        if err != nil {
-          return err
-        }
-        cur_send, err = os.ReadFile(cur_path + "/" + v.Name())
+        cur_send, err = os.ReadFile(cur_path_dir_found)
         if err != nil {
           return err
         }
@@ -2997,9 +2953,9 @@ func main() {
       fmt.Println("Error:", err)
       return
     }
-    binary.Write(conn, binary.LittleEndian, 0)
     var hash_slice []byte
-    hash_buffr := sha256.Sum256([]byte(cur_val3))
+    cur_len := []byte{0}
+    hash_buffr := sha256.Sum256(cur_len)
     hash_slice = hash_buffr[:]
     sign, err := rsa.SignPKCS1v15(rand.Reader, 
                                private_key, 
@@ -3010,9 +2966,32 @@ func main() {
       return
     }
     binary.Write(conn, binary.LittleEndian, sign)
-    tmp_val := []byte(cur_val3)
-    cur_len := int64(len(tmp_val))
     binary.Write(conn, binary.LittleEndian, cur_len)
+    tmp_val := []byte(cur_val3)
+    cur_len = []byte{byte(len(tmp_val))}
+    hash_buffr = sha256.Sum256(cur_len)
+    hash_slice = hash_buffr[:]
+    sign, err = rsa.SignPKCS1v15(rand.Reader, 
+                               private_key, 
+                               crypto.SHA256,
+                               hash_slice)
+    if err != nil {
+      fmt.Println(err)
+      return
+    }
+    binary.Write(conn, binary.LittleEndian, sign)
+    binary.Write(conn, binary.LittleEndian, cur_len)
+    hash_buffr = sha256.Sum256(tmp_val)
+    hash_slice = hash_buffr[:]
+    sign, err = rsa.SignPKCS1v15(rand.Reader, 
+                               private_key, 
+                               crypto.SHA256,
+                               hash_slice)
+    if err != nil {
+      fmt.Println(err)
+      return
+    }
+    binary.Write(conn, binary.LittleEndian, sign)
     binary.Write(conn, binary.LittleEndian, tmp_val)
     data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
     if err != nil {
@@ -3020,7 +2999,19 @@ func main() {
       return
     }
     branch := string(data)
-    cur_len = int64(len(data))
+    cur_len = []byte{byte(len(data))}
+    hash_buffr = sha256.Sum256(cur_len)
+    hash_slice = hash_buffr[:]
+    sign, err = rsa.SignPKCS1v15(rand.Reader, 
+                               private_key, 
+                               crypto.SHA256,
+                               hash_slice)
+    if err != nil {
+      fmt.Println(err)
+      return
+    }
+    binary.Write(conn, binary.LittleEndian, sign)
+    binary.Write(conn, binary.LittleEndian, cur_len)
     hash_buffr = sha256.Sum256(data)
     hash_slice = hash_buffr[:]
     sign, err = rsa.SignPKCS1v15(rand.Reader, 
@@ -3032,7 +3023,6 @@ func main() {
       return
     }
     binary.Write(conn, binary.LittleEndian, sign)
-    binary.Write(conn, binary.LittleEndian, cur_len)
     binary.Write(conn, binary.LittleEndian, data)
     cur_val2 = base_dir + cur_val3 + "/" + branch
     data, err = os.ReadFile(cur_val2 + "/commits.txt")
@@ -3040,8 +3030,8 @@ func main() {
       fmt.Println("Error:", err)
       return
     }
-    cur_len = int64(len(data))
-    hash_buffr = sha256.Sum256([]byte(branch))
+    cur_len = []byte{byte(len(data))}
+    hash_buffr = sha256.Sum256(cur_len)
     hash_slice = hash_buffr[:]
     sign, err = rsa.SignPKCS1v15(rand.Reader, 
                                private_key, 
@@ -3052,7 +3042,18 @@ func main() {
       return
     }
     binary.Write(conn, binary.LittleEndian, sign)
-    binary.Write(conn, binary.LittleEndian, cur_len)  
+    binary.Write(conn, binary.LittleEndian, cur_len)
+    hash_buffr = sha256.Sum256(data)
+    hash_slice = hash_buffr[:]
+    sign, err = rsa.SignPKCS1v15(rand.Reader, 
+                               private_key, 
+                               crypto.SHA256,
+                               hash_slice)
+    if err != nil {
+      fmt.Println(err)
+      return
+    }
+    binary.Write(conn, binary.LittleEndian, sign)
     binary.Write(conn, binary.LittleEndian, data)
     cur_bfr := make([]byte, 6)
     sign_buffr := make([]byte, 256)
