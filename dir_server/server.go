@@ -14,12 +14,15 @@ import (
   "time"
 )
 
+var current_connections int = 0
+
 func CompByteSlice(x *[]byte, x2 *[]byte) bool {
-  n := len(*x) 
-  if n != len(*x2) {
+  n := len(*x)
+  n2 := len(*x2)
+  if n < len(*x2) {
     return false
   }
-  for i := 0; i < n; i++ {
+  for i := 0; i < n2; i++ {
     if (*x)[i] != (*x2)[i] {
       return false
     }
@@ -61,8 +64,10 @@ func RunServer(admin_pub_key *rsa.PublicKey,
                standard_pub_key *rsa.PublicKey,
                ref_rtn_data *[]byte,
                sign *[]byte,
+               signb *[]byte,
                ref_rtn_data2 *[]byte,
-               sign2 *[]byte) error {
+               sign2 *[]byte,
+               sign2b *[]byte) error {
   ln, err := net.Listen("tcp", "0.0.0.0:8079")
   defer ln.Close()
   if err != nil {
@@ -79,8 +84,10 @@ func RunServer(admin_pub_key *rsa.PublicKey,
                       standard_pub_key,
                       ref_rtn_data,
                       sign,
+                      signb,
                       ref_rtn_data2,
-                      sign2)
+                      sign2,
+                      sign2b)
   }
 }
 
@@ -97,23 +104,60 @@ func ReceiveRequest(conn *net.Conn,
                  standard_pub_key *rsa.PublicKey,
                  ref_rtn_data *[]byte,
                  sign *[]byte,
+                 signb *[]byte,
                  ref_rtn_data2 *[]byte,
-                 sign2 *[]byte) {
-  var n int32
+                 sign2 *[]byte,
+                 sign2b *[]byte) {
+  var n []byte
   var err error
+  var sign_rcv []byte
+  var hash_buffr [32]byte
+  var hash_sl []byte
+  err = binary.Read(*conn, binary.LittleEndian, &sign_rcv)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
   err = binary.Read(*conn, binary.LittleEndian, &n)
   if err != nil {
     CheckDeadLine(err)
     (*conn).Close()
   } else {
-    if n == 0 {
-      CommitRequest(conn, 
-                    admin_pub_key, 
+    hash_buffr = sha256.Sum256(n)
+    hash_sl = hash_buffr[:]
+    err = rsa.VerifyPKCS1v15(admin_pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign_rcv)
+    if err != nil {
+       err = rsa.VerifyPKCS1v15(standard_pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign_rcv)
+       if err != nil {
+         CheckDeadLine(err)
+         (*conn).Close()
+         return
+       }
+       if n[0] == 0 {
+         CommitRequestStandard(conn, 
                     standard_pub_key,
                     ref_rtn_data,
                     sign,
                     ref_rtn_data2,
                     sign2)
+       } else {
+
+       }
+    }
+    if n[0] == 0 {
+      CommitRequestAdmin(conn, 
+                    admin_pub_key, 
+                    ref_rtn_data,
+                    signb,
+                    ref_rtn_data2,
+                    sign2b)
     } else {
       
     }
@@ -121,8 +165,7 @@ func ReceiveRequest(conn *net.Conn,
   return
 }
 
-func CommitRequest(conn *net.Conn, 
-                 admin_pub_key *rsa.PublicKey,
+func CommitRequestStandard(conn *net.Conn, 
                  standard_pub_key *rsa.PublicKey,
                  ref_rtn_data *[]byte,
                  sign *[]byte,
@@ -133,7 +176,7 @@ func CommitRequest(conn *net.Conn,
   var cur_val2 string
   var is_valid bool
   sign_buffr := make([]byte, 256)
-  var cur_len int64
+  var cur_len [1]byte
   err := binary.Read(*conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
@@ -147,165 +190,750 @@ func CommitRequest(conn *net.Conn,
     (*conn).Close()
     return
   }
-  data_buffr := make([]byte, cur_len)
+  data_sl := cur_len[:]
+  hash_bffr := sha256.Sum256(data_sl)
+  hash_sl := hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                        crypto.SHA256, 
+                        hash_sl, 
+                        sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  data_buffr := make([]byte, cur_len[0])
   err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
   if err != nil {
     CheckDeadLine(err)
     (*conn).Close()
     return
   }
-  data_sl := data_buffr[:]
+  data_sl = data_buffr[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                        crypto.SHA256, 
+                        hash_sl, 
+                        sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  cur_val = string(data_sl)
+  cur_val2 = "initiated.txt"
+  is_valid, err = ExistDirFile(&cur_val, &cur_val2)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  if !is_valid {
+    (*conn).Close()
+    return
+  }
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl = cur_len[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  data_buffr = make([]byte, cur_len[0])
+  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl = data_buffr[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  cur_valb = string(data_sl)
+  cur_val2 = cur_valb + "/initiated.txt"
+  is_valid, err = ExistDirFile(&cur_valb, &cur_val2)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  if !is_valid {
+    cur_val += ("/" + cur_valb)
+    err = os.Mkdir(cur_val, 0755)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+  }
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl = cur_len[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  data_buffr = make([]byte, cur_len[0])
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl = data_buffr[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  data, err := os.ReadFile(cur_val + "/commits.txt")
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  is_valid = CompByteSlice(&data_sl, &data)
+  if !is_valid {
+    _, err = (*conn).Write(*sign)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    _, err = (*conn).Write(*ref_rtn_data)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+  }
+  _, err = (*conn).Write(*sign2)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  _, err = (*conn).Write(*ref_rtn_data2)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  tmp_val := string(data)
+  tmp_val2 := ""
+  i := len(tmp_val) - 1
+  for i > -1 && tmp_val[i] != '\n' {
+    tmp_val2 = string(tmp_val[i]) + tmp_val2
+    i--
+  }
+  cur_val += ("/" + tmp_val2)
+  err = os.Mkdir(cur_val, 0755)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  var cur_name string
+  for {
+    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    data_sl = cur_len[:]
+    hash_bffr = sha256.Sum256(data_sl)
+    hash_sl = hash_bffr[:]
+    err = rsa.VerifyPKCS1v15(standard_pub_key,
+                            crypto.SHA256, 
+                            hash_sl, 
+                            sign_sl)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    data_buffr = make([]byte, cur_len[0])
+    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    data_sl = data_buffr[:]
+    cur_name = string(data_sl)
+    hash_bffr = sha256.Sum256(data_sl)
+    hash_sl = hash_bffr[:]
+    err = rsa.VerifyPKCS1v15(standard_pub_key,
+                            crypto.SHA256, 
+                            hash_sl, 
+                            sign_sl)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    data_sl = cur_len[:]
+    hash_bffr = sha256.Sum256(data_sl)
+    hash_sl = hash_bffr[:]
+    err = rsa.VerifyPKCS1v15(standard_pub_key,
+                            crypto.SHA256, 
+                            hash_sl, 
+                            sign_sl)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    if cur_len[0] == 0 {
+      err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+      if err != nil {
+        CheckDeadLine(err)
+        (*conn).Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+      if err != nil {
+        CheckDeadLine(err)
+        (*conn).Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      data_sl = cur_len[:]
+      hash_bffr = sha256.Sum256(data_sl)
+      hash_sl = hash_bffr[:]
+      err = rsa.VerifyPKCS1v15(standard_pub_key,
+                              crypto.SHA256, 
+                              hash_sl, 
+                              sign_sl)
+      if err != nil {
+        (*conn).Close()
+        return
+      }
+      data_buffr = make([]byte, cur_len[0])
+      err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+      if err != nil {
+        CheckDeadLine(err)
+        (*conn).Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+      if err != nil {
+        CheckDeadLine(err)
+        (*conn).Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      data_sl = data_buffr[:]
+      hash_bffr = sha256.Sum256(data_sl)
+      hash_sl = hash_bffr[:]
+      err = rsa.VerifyPKCS1v15(standard_pub_key,
+                              crypto.SHA256, 
+                              hash_sl, 
+                              sign_sl)
+      if err != nil {
+        (*conn).Close()
+        return
+      }
+      err = os.WriteFile(cur_val + "/" + cur_name, data_sl, 0644)
+      if err != nil {
+        (*conn).Close()
+        return
+      }
+    } else if cur_len[0] == 1 {
+      err = os.Mkdir(cur_val + "/" + cur_name, 0755)
+      if err != nil {
+        (*conn).Close()
+        return
+      }
+    } else if cur_len[0] == 2 {
+      break
+    }
+  }
+  return
+}
+
+func CommitRequestAdmin(conn *net.Conn, 
+                 admin_pub_key *rsa.PublicKey,
+                 ref_rtn_data *[]byte,
+                 sign *[]byte,
+                 ref_rtn_data2 *[]byte,
+                 sign2 *[]byte) {
+  var cur_val string
+  var cur_valb string
+  var cur_val2 string
+  var is_valid bool
+  sign_buffr := make([]byte, 256)
+  var cur_len [1]byte
+  err := binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl := sign_buffr[:]
+  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl := cur_len[:]
   hash_bffr := sha256.Sum256(data_sl)
   hash_sl := hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                        crypto.SHA256, 
+                        hash_sl, 
+                        sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  data_buffr := make([]byte, cur_len[0])
+  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl = data_buffr[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                        crypto.SHA256, 
+                        hash_sl, 
+                        sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  cur_val = string(data_sl)
+  cur_val2 = "initiated.txt"
+  is_valid, err = ExistDirFile(&cur_val, &cur_val2)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  if !is_valid {
+    (*conn).Close()
+    return
+  }
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl = cur_len[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
   err = rsa.VerifyPKCS1v15(admin_pub_key,
                           crypto.SHA256, 
                           hash_sl, 
                           sign_sl)
   if err != nil {
-     err = rsa.VerifyPKCS1v15(standard_pub_key,
+    (*conn).Close()
+    return
+  }
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  data_buffr = make([]byte, cur_len[0])
+  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl = data_buffr[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
                           crypto.SHA256, 
                           hash_sl, 
                           sign_sl)
-    if err != nil {
-      (*conn).Close()
-      return
-    }
-    cur_val = string(data_sl)
-    cur_val2 = "initiated.txt"
-    is_valid, err = ExistDirFile(&cur_val, &cur_val2)
-    if err != nil {
-      (*conn).Close()
-      return
-    }
-    if !is_valid {
-      (*conn).Close()
-      return
-    }
-    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
-    if err != nil {
-      CheckDeadLine(err)
-      (*conn).Close()
-      return
-    }
-    sign_sl = sign_buffr[:]
-    err = binary.Read(*conn, binary.LittleEndian, &cur_len)
-    if err != nil {
-      CheckDeadLine(err)
-      (*conn).Close()
-      return
-    }
-    data_buffr = make([]byte, cur_len)
-    err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
-    if err != nil {
-      CheckDeadLine(err)
-      (*conn).Close()
-      return
-    }
-    data_sl = data_buffr[:]
-    hash_bffr = sha256.Sum256(data_sl)
-    hash_sl = hash_bffr[:]
-    err = rsa.VerifyPKCS1v15(standard_pub_key,
-                            crypto.SHA256, 
-                            hash_sl, 
-                            sign_sl)
-    if err != nil {
-      (*conn).Close()
-      return
-    }
-    cur_valb = string(data_sl)
-    cur_val2 = cur_valb + "/initiated.txt"
-    is_valid, err = ExistDirFile(&cur_valb, &cur_val2)
-    if err != nil {
-      (*conn).Close()
-      return
-    }
-    if !is_valid {
-      cur_val += ("/" + cur_valb)
-      err = os.Mkdir(cur_val, 0755)
-      if err != nil {
-        (*conn).Close()
-        return
-      }
-    }
-    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
-    if err != nil {
-      CheckDeadLine(err)
-      (*conn).Close()
-      return
-    }
-    sign_sl = sign_buffr[:]
-    err = binary.Read(*conn, binary.LittleEndian, &cur_len)
-    if err != nil {
-      CheckDeadLine(err)
-      (*conn).Close()
-      return
-    }
-    data_buffr = make([]byte, cur_len)
-    err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
-    if err != nil {
-      CheckDeadLine(err)
-      (*conn).Close()
-      return
-    }
-    data_sl = data_buffr[:]
-    hash_bffr = sha256.Sum256(data_sl)
-    hash_sl = hash_bffr[:]
-    err = rsa.VerifyPKCS1v15(standard_pub_key,
-                            crypto.SHA256, 
-                            hash_sl, 
-                            sign_sl)
-    if err != nil {
-      (*conn).Close()
-      return
-    }
-    data, err := os.ReadFile(cur_val + "/commits.txt")
-    if err != nil {
-      (*conn).Close()
-      return
-    }
-    is_valid = CompByteSlice(&data_sl, &data)
-    if !is_valid {
-      _, err = (*conn).Write(*sign)
-      if err != nil {
-        (*conn).Close()
-        return
-      }
-      _, err = (*conn).Write(*ref_rtn_data)
-      if err != nil {
-        (*conn).Close()
-        return
-      }
-    }
-    _, err = (*conn).Write(*sign2)
-    if err != nil {
-      (*conn).Close()
-      return
-    }
-    _, err = (*conn).Write(*ref_rtn_data2)
-    if err != nil {
-      (*conn).Close()
-      return
-    }
+  if err != nil {
+    (*conn).Close()
     return
+  }
+  cur_valb = string(data_sl)
+  cur_val2 = cur_valb + "/initiated.txt"
+  is_valid, err = ExistDirFile(&cur_valb, &cur_val2)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  if !is_valid {
+    cur_val += ("/" + cur_valb)
+    err = os.Mkdir(cur_val, 0755)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+  }
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl = cur_len[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  data_buffr = make([]byte, cur_len[0])
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl = data_buffr[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  data, err := os.ReadFile(cur_val + "/commits.txt")
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  is_valid = CompByteSlice(&data_sl, &data)
+  if !is_valid {
+    _, err = (*conn).Write(*sign)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    _, err = (*conn).Write(*ref_rtn_data)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+  }
+  _, err = (*conn).Write(*sign2)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  _, err = (*conn).Write(*ref_rtn_data2)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  tmp_val := string(data)
+  tmp_val2 := ""
+  i := len(tmp_val) - 1
+  for i > -1 && tmp_val[i] != '\n' {
+    tmp_val2 = string(tmp_val[i]) + tmp_val2
+    i--
+  }
+  cur_val += ("/" + tmp_val2)
+  err = os.Mkdir(cur_val, 0755)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  var cur_name string
+  for {
+    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    data_sl = cur_len[:]
+    hash_bffr = sha256.Sum256(data_sl)
+    hash_sl = hash_bffr[:]
+    err = rsa.VerifyPKCS1v15(admin_pub_key,
+                            crypto.SHA256, 
+                            hash_sl, 
+                            sign_sl)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    data_buffr = make([]byte, cur_len[0])
+    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    data_sl = data_buffr[:]
+    cur_name = string(data_sl)
+    hash_bffr = sha256.Sum256(data_sl)
+    hash_sl = hash_bffr[:]
+    err = rsa.VerifyPKCS1v15(admin_pub_key,
+                            crypto.SHA256, 
+                            hash_sl, 
+                            sign_sl)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+    if err != nil {
+      CheckDeadLine(err)
+      (*conn).Close()
+      return
+    }
+    sign_sl = sign_buffr[:]
+    data_sl = cur_len[:]
+    hash_bffr = sha256.Sum256(data_sl)
+    hash_sl = hash_bffr[:]
+    err = rsa.VerifyPKCS1v15(admin_pub_key,
+                            crypto.SHA256, 
+                            hash_sl, 
+                            sign_sl)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    if cur_len[0] == 0 {
+      err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+      if err != nil {
+        CheckDeadLine(err)
+        (*conn).Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+      if err != nil {
+        CheckDeadLine(err)
+        (*conn).Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      data_sl = cur_len[:]
+      hash_bffr = sha256.Sum256(data_sl)
+      hash_sl = hash_bffr[:]
+      err = rsa.VerifyPKCS1v15(admin_pub_key,
+                              crypto.SHA256, 
+                              hash_sl, 
+                              sign_sl)
+      if err != nil {
+        (*conn).Close()
+        return
+      }
+      data_buffr = make([]byte, cur_len[0])
+      err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+      if err != nil {
+        CheckDeadLine(err)
+        (*conn).Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+      if err != nil {
+        CheckDeadLine(err)
+        (*conn).Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      data_sl = data_buffr[:]
+      hash_bffr = sha256.Sum256(data_sl)
+      hash_sl = hash_bffr[:]
+      err = rsa.VerifyPKCS1v15(admin_pub_key,
+                              crypto.SHA256, 
+                              hash_sl, 
+                              sign_sl)
+      if err != nil {
+        (*conn).Close()
+        return
+      }
+      err = os.WriteFile(cur_val + "/" + cur_name, data_sl, 0644)
+      if err != nil {
+        (*conn).Close()
+        return
+      }
+    } else if cur_len[0] == 1 {
+      err = os.Mkdir(cur_val + "/" + cur_name, 0755)
+      if err != nil {
+        (*conn).Close()
+        return
+      }
+    } else if cur_len[0] == 2 {
+      break
+    }
   }
   return
 }
 
-func SyncRequest(conn *net.Conn, 
-                 admin_pub_key *rsa.PublicKey,
+func SyncRequestStandard(conn *net.Conn, 
                  standard_pub_key *rsa.PublicKey) {
 
 }
 
+func SyncRequestAdmin(conn *net.Conn, 
+                 admin_pub_key *rsa.PublicKey) {
+
+}
+
 func main () {
-  data, err := os.ReadFile("privateKey.pem")
+  data, err := os.ReadFile("standard_privateKey.pem")
   if err != nil {
     fmt.Println("Error:", err)
     return
   }
   block, _ := pem.Decode(data)
   if block == nil {
-    fmt.Println("Failed to decode the RSA private key")
+    fmt.Println("Failed to decode the RSA standard private key")
     return
   }
   if block.Type != "RSA PRIVATE KEY" {
@@ -314,7 +942,26 @@ func main () {
   }
   standard_private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
   if err != nil {
-    fmt.Println("Error: failed parsing RSA private key")
+    fmt.Println("Error: failed parsing RSA standard private key")
+    return
+  }
+  data, err = os.ReadFile("admin_privateKey.pem")
+  if err != nil {
+    fmt.Println("Error:", err)
+    return
+  }
+  block, _ = pem.Decode(data)
+  if block == nil {
+    fmt.Println("Failed to decode the RSA admin private key")
+    return
+  }
+  if block.Type != "RSA PRIVATE KEY" {
+    fmt.Println("Error: this is not a RSA private key")
+    return
+  }
+  admin_private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+  if err != nil {
+    fmt.Println("Error: failed parsing RSA admin private key")
     return
   }
   ref_data := []byte("desync")
@@ -322,6 +969,14 @@ func main () {
   hash_slice := hash_buffr[:]
   sign, err := rsa.SignPKCS1v15(rand.Reader, 
                                  standard_private_key, 
+                                 crypto.SHA256,
+                                 hash_slice)
+  if err != nil {
+    fmt.Println(err)
+    return
+  }
+  signb, err := rsa.SignPKCS1v15(rand.Reader, 
+                                 admin_private_key, 
                                  crypto.SHA256,
                                  hash_slice)
   if err != nil {
@@ -339,6 +994,14 @@ func main () {
     fmt.Println(err)
     return
   }
+  sign2b, err := rsa.SignPKCS1v15(rand.Reader, 
+                                 admin_private_key, 
+                                 crypto.SHA256,
+                                 hash_slice)
+  if err != nil {
+    fmt.Println(err)
+    return
+  }
   data, err = os.ReadFile("admin_pubKey.pem")
   if err != nil {
     fmt.Println("Error:", err)
@@ -346,7 +1009,7 @@ func main () {
   }
   block, _ = pem.Decode(data)
   if block == nil {
-    fmt.Println("Error: failed to decode pubKey.pem")
+    fmt.Println("Error: failed to decode admin_pubKey.pem")
     return
   }
   if block.Type != "RSA PUBLIC KEY" {
@@ -358,14 +1021,14 @@ func main () {
     fmt.Println("Error:", err)
     return
   }
-  data, err = os.ReadFile("admin_pubKey.pem")
+  data, err = os.ReadFile("standard_pubKey.pem")
   if err != nil {
     fmt.Println("Error:", err)
     return
   }
   block, _ = pem.Decode(data)
   if block == nil {
-    fmt.Println("Error: failed to decode pubKey.pem")
+    fmt.Println("Error: failed to decode standard_pubKey.pem")
     return
   }
   if block.Type != "RSA PUBLIC KEY" {
@@ -381,8 +1044,10 @@ func main () {
                   standard_public_key,
                   &ref_data,
                   &sign,
+                  &signb,
                   &ref_data2,
-                  &sign2)
+                  &sign2,
+                  &sign2b)
   if err != nil {
     fmt.Println("Error:", err)
     return
