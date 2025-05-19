@@ -16,6 +16,21 @@ import (
 
 var current_connections int = 0
 
+func ByteSliceToInt(x *[]byte) int {
+  var rtn_int int = 256
+  var ref_mult int = 256
+  var i int = len(*x) - 1
+  if i == 0 {
+    return int((*x)[0])
+  }
+  for i > -1 {
+    rtn_int = ((int((*x)[i]) + 1) * ref_mult + int((*x)[i - 1]))
+    ref_mult = rtn_int
+    i -= 2
+  }
+  return rtn_int
+}
+
 func CompByteSlice(x *[]byte, x2 *[]byte) bool {
   n := len(*x)
   n2 := len(*x2)
@@ -108,9 +123,11 @@ func ReceiveRequest(conn *net.Conn,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte,
                  sign2b *[]byte) {
-  var n []byte
+  var n [1]byte
+  var n_sl []byte
   var err error
-  var sign_rcv []byte
+  var sign_rcv [256]byte
+  var sign_rcv_sl []byte
   var hash_buffr [32]byte
   var hash_sl []byte
   err = binary.Read(*conn, binary.LittleEndian, &sign_rcv)
@@ -119,24 +136,32 @@ func ReceiveRequest(conn *net.Conn,
     (*conn).Close()
     return
   }
+  sign_rcv_sl = sign_rcv[:]
   err = binary.Read(*conn, binary.LittleEndian, &n)
+  n_sl = n[:]
+  fmt.Println("n:", n)
   if err != nil {
     CheckDeadLine(err)
     (*conn).Close()
   } else {
-    hash_buffr = sha256.Sum256(n)
+    hash_buffr = sha256.Sum256(n_sl)
     hash_sl = hash_buffr[:]
     err = rsa.VerifyPKCS1v15(admin_pub_key,
                           crypto.SHA256, 
                           hash_sl, 
-                          sign_rcv)
+                          sign_rcv_sl)
+    fmt.Println("pub_key:", admin_pub_key)
+    fmt.Println("sign_rcv:", sign_rcv, len(sign_rcv))
+    fmt.Println("hash_sl:", hash_sl)
     if err != nil {
        err = rsa.VerifyPKCS1v15(standard_pub_key,
                           crypto.SHA256, 
                           hash_sl, 
-                          sign_rcv)
+                          sign_rcv_sl)
+       fmt.Println("Ok")
        if err != nil {
          CheckDeadLine(err)
+         fmt.Println("OkB")
          (*conn).Close()
          return
        }
@@ -171,6 +196,7 @@ func CommitRequestStandard(conn *net.Conn,
                  sign *[]byte,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte) {
+  fmt.Println("Standard")
   var cur_val string
   var cur_valb string
   var cur_val2 string
@@ -546,12 +572,14 @@ func CommitRequestAdmin(conn *net.Conn,
                  sign *[]byte,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte) {
+  fmt.Println("Admin")
   var cur_val string
   var cur_valb string
   var cur_val2 string
   var is_valid bool
   sign_buffr := make([]byte, 256)
   var cur_len [1]byte
+  //PROJECT VERIF
   err := binary.Read(*conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
@@ -609,9 +637,39 @@ func CommitRequestAdmin(conn *net.Conn,
     return
   }
   if !is_valid {
-    (*conn).Close()
-    return
+    err = os.Mkdir(cur_val, 0755)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    err = os.WriteFile(cur_val + "/initiated.txt", 
+                      []byte(""), 
+                      0644)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    err = os.WriteFile(cur_val + "/commits.txt", 
+                      []byte(""), 
+                      0644)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    data_sl, err = os.ReadFile("initiated.txt")
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    data_sl = append(data_sl, []byte(cur_val + "\n")...)
+    err = os.WriteFile("initiated.txt", data_sl, 0644)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
   }
+  ////
+  //BRANCH VERIF
   err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
@@ -662,7 +720,8 @@ func CommitRequestAdmin(conn *net.Conn,
     return
   }
   cur_valb = string(data_sl)
-  cur_val2 = cur_valb + "/initiated.txt"
+  cur_val2 = cur_val + "/initiated.txt"
+  fmt.Println("cur_val2:", cur_val2)
   is_valid, err = ExistDirFile(&cur_valb, &cur_val2)
   if err != nil {
     (*conn).Close()
@@ -670,12 +729,25 @@ func CommitRequestAdmin(conn *net.Conn,
   }
   if !is_valid {
     cur_val += ("/" + cur_valb)
+    fmt.Println("cur_val:", cur_val)
     err = os.Mkdir(cur_val, 0755)
     if err != nil {
       (*conn).Close()
       return
     }
+    err = os.WriteFile(cur_val + "/commits.txt", []byte(""), 0644)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
+    err = os.Mkdir(cur_val + "/data", 0755)
+    if err != nil {
+      (*conn).Close()
+      return
+    }
   }
+  ////
+  //COMMIT VERIF
   err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
@@ -700,7 +772,35 @@ func CommitRequestAdmin(conn *net.Conn,
     (*conn).Close()
     return
   }
-  data_buffr = make([]byte, cur_len[0])
+  final_cur_len := make([]byte, cur_len[0])
+  fmt.Println("okok", final_cur_len)
+  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  err = binary.Read(*conn, binary.LittleEndian, &final_cur_len)
+  if err != nil {
+    CheckDeadLine(err)
+    (*conn).Close()
+    return
+  }
+  data_sl = final_cur_len[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign_sl)
+  if err != nil {
+    (*conn).Close()
+    return
+  }
+  target_len := ByteSliceToInt(&final_cur_len)
+  fmt.Println("target_len:", target_len)
+  data_buffr = make([]byte, target_len)
   err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
@@ -714,6 +814,8 @@ func CommitRequestAdmin(conn *net.Conn,
     (*conn).Close()
     return
   }
+  fmt.Println("data:", data_buffr)
+  fmt.Println("sign:", sign_buffr)
   data_sl = data_buffr[:]
   hash_bffr = sha256.Sum256(data_sl)
   hash_sl = hash_bffr[:]
@@ -722,9 +824,11 @@ func CommitRequestAdmin(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
+    fmt.Println("okI")
     (*conn).Close()
     return
   }
+  fmt.Println("cur_valB:", cur_val)
   data, err := os.ReadFile(cur_val + "/commits.txt")
   if err != nil {
     (*conn).Close()
@@ -743,6 +847,9 @@ func CommitRequestAdmin(conn *net.Conn,
       return
     }
   }
+  ////
+  fmt.Println("sign2", *sign2, len(*sign2))
+  fmt.Println("ref_rtn_data2", *ref_rtn_data2)
   _, err = (*conn).Write(*sign2)
   if err != nil {
     (*conn).Close()
@@ -753,14 +860,17 @@ func CommitRequestAdmin(conn *net.Conn,
     (*conn).Close()
     return
   }
-  tmp_val := string(data)
+  tmp_val := string(data_sl)
   tmp_val2 := ""
-  i := len(tmp_val) - 1
+  i := len(tmp_val) - 2
   for i > -1 && tmp_val[i] != '\n' {
     tmp_val2 = string(tmp_val[i]) + tmp_val2
     i--
   }
-  cur_val += ("/" + tmp_val2)
+  fmt.Println("tmp_val:", tmp_val)
+  fmt.Println("tmp_val2:", tmp_val2)
+  cur_val += ("/data/" + tmp_val2)
+  fmt.Println("cur_val:", cur_val)
   err = os.Mkdir(cur_val, 0755)
   if err != nil {
     (*conn).Close()
@@ -846,6 +956,7 @@ func CommitRequestAdmin(conn *net.Conn,
       return
     }
     if cur_len[0] == 0 {
+      fmt.Println("file_val")
       err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
       if err != nil {
         CheckDeadLine(err)
@@ -871,7 +982,34 @@ func CommitRequestAdmin(conn *net.Conn,
         (*conn).Close()
         return
       }
-      data_buffr = make([]byte, cur_len[0])
+      final_cur_len = make([]byte, cur_len[0])
+      err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+      if err != nil {
+        CheckDeadLine(err)
+        (*conn).Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      err = binary.Read(*conn, binary.LittleEndian, &final_cur_len)
+      if err != nil {
+        CheckDeadLine(err)
+        (*conn).Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      data_sl = cur_len[:]
+      hash_bffr = sha256.Sum256(final_cur_len)
+      hash_sl = hash_bffr[:]
+      err = rsa.VerifyPKCS1v15(admin_pub_key,
+                              crypto.SHA256, 
+                              hash_sl, 
+                              sign_sl)
+      if err != nil {
+        (*conn).Close()
+        return
+      } 
+      target_len = ByteSliceToInt(&final_cur_len)
+      data_buffr = make([]byte, target_len)
       err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
       if err != nil {
         CheckDeadLine(err)
@@ -897,18 +1035,23 @@ func CommitRequestAdmin(conn *net.Conn,
         (*conn).Close()
         return
       }
-      err = os.WriteFile(cur_val + "/" + cur_name, data_sl, 0644)
+      fmt.Println("cur_val:", cur_val, cur_name)
+      err = os.WriteFile(cur_name, data_sl, 0644)
       if err != nil {
         (*conn).Close()
         return
       }
+      fmt.Println("ok")
     } else if cur_len[0] == 1 {
-      err = os.Mkdir(cur_val + "/" + cur_name, 0755)
+      fmt.Println("dir_val")
+      fmt.Println("cur_val:", cur_val, cur_name)
+      err = os.Mkdir(cur_name, 0755)
       if err != nil {
         (*conn).Close()
         return
       }
     } else if cur_len[0] == 2 {
+      fmt.Println("Stop")
       break
     }
   }
@@ -984,7 +1127,7 @@ func main () {
     return
   }
   ref_data2 := []byte("onsync")
-  hash_buffr = sha256.Sum256(ref_data)
+  hash_buffr = sha256.Sum256(ref_data2)
   hash_slice = hash_buffr[:]
   sign2, err := rsa.SignPKCS1v15(rand.Reader, 
                                  standard_private_key, 
