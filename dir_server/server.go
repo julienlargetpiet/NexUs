@@ -322,7 +322,7 @@ func CommitRequestStandard(conn net.Conn,
       conn.Close()
       return
     }
-    data = append(data, []byte(cur_valb)...)
+    data = append(data, []byte(cur_valb + "\n")...)
     err = os.WriteFile(cur_val + "/initiated.txt", data, 0644)
     if err != nil {
       conn.Close()
@@ -839,7 +839,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    data = append(data, []byte(cur_valb)...)
+    data = append(data, []byte(cur_valb + "\n")...)
     err = os.WriteFile(cur_val + "/initiated.txt", data, 0644)
     if err != nil {
       conn.Close()
