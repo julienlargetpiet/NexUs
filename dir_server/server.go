@@ -809,6 +809,7 @@ func CommitRequestStandard(conn net.Conn,
       break
     }
   }
+  conn.Close()
   return
 }
 
@@ -1473,6 +1474,7 @@ func CommitRequestAdmin(conn net.Conn,
       break
     }
   }
+  conn.Close()
   return
 }
 
