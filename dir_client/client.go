@@ -3297,6 +3297,7 @@ func main() {
       conn.Close()
       return
     }
+    conn.Close()
     return
   }
 
