@@ -3293,8 +3293,8 @@ func main() {
                    cur_val2 + "/data/" + cur_commit, 
                    private_key)
     if err != nil {
-      conn.Close()
       fmt.Println("Error:", err)
+      conn.Close()
       return
     }
     return
