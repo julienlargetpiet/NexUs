@@ -94,7 +94,7 @@ func RunServer(admin_pub_key *rsa.PublicKey,
       return err
     }
     err = conn.SetDeadline(time.Now().Add(2 * time.Second))
-    go ReceiveRequest(&conn, 
+    go ReceiveRequest(conn, 
                       admin_pub_key, 
                       standard_pub_key,
                       ref_rtn_data,
@@ -114,7 +114,7 @@ func CheckDeadLine(err error) {
   fmt.Println("Something went wrong", err)
 }
 
-func ReceiveRequest(conn *net.Conn, 
+func ReceiveRequest(conn net.Conn, 
                  admin_pub_key *rsa.PublicKey,
                  standard_pub_key *rsa.PublicKey,
                  ref_rtn_data *[]byte,
@@ -130,18 +130,18 @@ func ReceiveRequest(conn *net.Conn,
   var sign_rcv_sl []byte
   var hash_buffr [32]byte
   var hash_sl []byte
-  err = binary.Read(*conn, binary.LittleEndian, &sign_rcv)
+  err = binary.Read(conn, binary.LittleEndian, &sign_rcv)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_rcv_sl = sign_rcv[:]
-  err = binary.Read(*conn, binary.LittleEndian, &n)
+  err = binary.Read(conn, binary.LittleEndian, &n)
   n_sl = n[:]
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
   } else {
     hash_buffr = sha256.Sum256(n_sl)
     hash_sl = hash_buffr[:]
@@ -156,7 +156,7 @@ func ReceiveRequest(conn *net.Conn,
                           sign_rcv_sl)
        if err != nil {
          CheckDeadLine(err)
-         (*conn).Close()
+         conn.Close()
          return
        }
        if n[0] == 0 {
@@ -184,30 +184,30 @@ func ReceiveRequest(conn *net.Conn,
   return
 }
 
-func CommitRequestStandard(conn *net.Conn, 
+func CommitRequestStandard(conn net.Conn, 
                  standard_pub_key *rsa.PublicKey,
                  ref_rtn_data *[]byte,
                  sign *[]byte,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte) {
-  fmt.Println("Standard")
   var cur_val string
   var cur_valb string
   var cur_val2 string
   var is_valid bool
   sign_buffr := make([]byte, 256)
   var cur_len [1]byte
-  err := binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  //PROJECT VERIF
+  err := binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl := sign_buffr[:]
-  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  err = binary.Read(conn, binary.LittleEndian, &cur_len)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl := cur_len[:]
@@ -218,21 +218,21 @@ func CommitRequestStandard(conn *net.Conn,
                         hash_sl, 
                         sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
   data_buffr := make([]byte, cur_len[0])
-  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &data_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl = data_buffr[:]
@@ -243,31 +243,33 @@ func CommitRequestStandard(conn *net.Conn,
                         hash_sl, 
                         sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   cur_val = string(data_sl)
-  cur_val2 = "initiated.txt"
+  cur_val2 = "waiting/initiated.txt"
   is_valid, err = ExistDirFile(&cur_val, &cur_val2)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   if !is_valid {
-    (*conn).Close()
-    return
+    conn.Close()
   }
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  cur_val = "waiting/" + cur_val
+  ////
+  //BRANCH VERIF
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
-  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  err = binary.Read(conn, binary.LittleEndian, &cur_len)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl = cur_len[:]
@@ -278,21 +280,21 @@ func CommitRequestStandard(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
   data_buffr = make([]byte, cur_len[0])
-  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &data_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl = data_buffr[:]
@@ -303,35 +305,60 @@ func CommitRequestStandard(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   cur_valb = string(data_sl)
-  cur_val2 = cur_valb + "/initiated.txt"
+  cur_val2 = cur_val + "/initiated.txt"
   is_valid, err = ExistDirFile(&cur_valb, &cur_val2)
   if err != nil {
-    (*conn).Close()
+    fmt.Println("ici", err)
+    conn.Close()
     return
   }
   if !is_valid {
+    data, err := os.ReadFile(cur_val + "/initiated.txt")
+    if err != nil {
+      conn.Close()
+      return
+    }
+    data = append(data, []byte(cur_valb)...)
+    err = os.WriteFile(cur_val + "/initiated.txt", data, 0644)
+    if err != nil {
+      conn.Close()
+      return
+    }
     cur_val += ("/" + cur_valb)
+    fmt.Println("cur_val:", cur_val)
     err = os.Mkdir(cur_val, 0755)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
+      return
+    }
+    err = os.WriteFile(cur_val + "/commits.txt", []byte(""), 0644)
+    if err != nil {
+      conn.Close()
+      return
+    }
+    err = os.Mkdir(cur_val + "/data", 0755)
+    if err != nil {
+      conn.Close()
       return
     }
   }
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  ////
+  //COMMIT VERIF
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
-  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  err = binary.Read(conn, binary.LittleEndian, &cur_len)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl = cur_len[:]
@@ -342,21 +369,47 @@ func CommitRequestStandard(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
-  data_buffr = make([]byte, cur_len[0])
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  final_cur_len := make([]byte, cur_len[0])
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
-  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &final_cur_len)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
+    return
+  }
+  data_sl = final_cur_len[:]
+  hash_bffr = sha256.Sum256(data_sl)
+  hash_sl = hash_bffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                          crypto.SHA256, 
+                          hash_sl, 
+                          sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  target_len := ByteSliceToInt(&final_cur_len)
+  data_buffr = make([]byte, target_len)
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    conn.Close()
+    return
+  }
+  sign_sl = sign_buffr[:]
+  err = binary.Read(conn, binary.LittleEndian, &data_buffr)
+  if err != nil {
+    CheckDeadLine(err)
+    conn.Close()
     return
   }
   data_sl = data_buffr[:]
@@ -367,63 +420,75 @@ func CommitRequestStandard(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   data, err := os.ReadFile(cur_val + "/commits.txt")
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   is_valid = CompByteSlice(&data_sl, &data)
   if !is_valid {
-    _, err = (*conn).Write(*sign)
+    _, err = conn.Write(*sign)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
-    _, err = (*conn).Write(*ref_rtn_data)
+    _, err = conn.Write(*ref_rtn_data)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
   }
-  _, err = (*conn).Write(*sign2)
+  ////
+  _, err = conn.Write(*sign2)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
-  _, err = (*conn).Write(*ref_rtn_data2)
+  _, err = conn.Write(*ref_rtn_data2)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
-  tmp_val := string(data)
+  tmp_val := string(data_sl)
   tmp_val2 := ""
-  i := len(tmp_val) - 1
+  i := len(tmp_val) - 2
   for i > -1 && tmp_val[i] != '\n' {
     tmp_val2 = string(tmp_val[i]) + tmp_val2
     i--
   }
-  cur_val += ("/" + tmp_val2)
+  data, err = os.ReadFile(cur_val + "/commits.txt")
+  if err != nil {
+    conn.Close()
+    return
+  }
+  data = append(data, []byte(tmp_val2 + "\n")...)
+  err = os.WriteFile(cur_val + "/commits.txt", data, 0644)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  cur_val += ("/data/" + tmp_val2)
   err = os.Mkdir(cur_val, 0755)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   var cur_name string
   for {
-    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
-    err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+    err = binary.Read(conn, binary.LittleEndian, &cur_len)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
@@ -435,21 +500,21 @@ func CommitRequestStandard(conn *net.Conn,
                             hash_sl, 
                             sign_sl)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
     data_buffr = make([]byte, cur_len[0])
-    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
-    err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+    err = binary.Read(conn, binary.LittleEndian, &data_buffr)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
@@ -462,20 +527,20 @@ func CommitRequestStandard(conn *net.Conn,
                             hash_sl, 
                             sign_sl)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
-    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
-    err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+    err = binary.Read(conn, binary.LittleEndian, &cur_len)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
@@ -487,21 +552,21 @@ func CommitRequestStandard(conn *net.Conn,
                             hash_sl, 
                             sign_sl)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
     if cur_len[0] == 0 {
-      err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+      err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
       if err != nil {
         CheckDeadLine(err)
-        (*conn).Close()
+        conn.Close()
         return
       }
       sign_sl = sign_buffr[:]
-      err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+      err = binary.Read(conn, binary.LittleEndian, &cur_len)
       if err != nil {
         CheckDeadLine(err)
-        (*conn).Close()
+        conn.Close()
         return
       }
       sign_sl = sign_buffr[:]
@@ -513,21 +578,48 @@ func CommitRequestStandard(conn *net.Conn,
                               hash_sl, 
                               sign_sl)
       if err != nil {
-        (*conn).Close()
+        conn.Close()
         return
       }
-      data_buffr = make([]byte, cur_len[0])
-      err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+      final_cur_len = make([]byte, cur_len[0])
+      err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
       if err != nil {
         CheckDeadLine(err)
-        (*conn).Close()
+        conn.Close()
         return
       }
       sign_sl = sign_buffr[:]
-      err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+      err = binary.Read(conn, binary.LittleEndian, &final_cur_len)
       if err != nil {
         CheckDeadLine(err)
-        (*conn).Close()
+        conn.Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      data_sl = cur_len[:]
+      hash_bffr = sha256.Sum256(final_cur_len)
+      hash_sl = hash_bffr[:]
+      err = rsa.VerifyPKCS1v15(standard_pub_key,
+                              crypto.SHA256, 
+                              hash_sl, 
+                              sign_sl)
+      if err != nil {
+        conn.Close()
+        return
+      } 
+      target_len = ByteSliceToInt(&final_cur_len)
+      data_buffr = make([]byte, target_len)
+      err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+      if err != nil {
+        CheckDeadLine(err)
+        conn.Close()
+        return
+      }
+      sign_sl = sign_buffr[:]
+      err = binary.Read(conn, binary.LittleEndian, &data_buffr)
+      if err != nil {
+        CheckDeadLine(err)
+        conn.Close()
         return
       }
       sign_sl = sign_buffr[:]
@@ -539,28 +631,30 @@ func CommitRequestStandard(conn *net.Conn,
                               hash_sl, 
                               sign_sl)
       if err != nil {
-        (*conn).Close()
+        conn.Close()
         return
       }
-      err = os.WriteFile(cur_val + "/" + cur_name, data_sl, 0644)
+      err = os.WriteFile("waiting/" + cur_name, data_sl, 0644)
       if err != nil {
-        (*conn).Close()
+        conn.Close()
         return
       }
     } else if cur_len[0] == 1 {
-      err = os.Mkdir(cur_val + "/" + cur_name, 0755)
+      err = os.Mkdir("waiting/" + cur_name, 0755)
       if err != nil {
-        (*conn).Close()
+        conn.Close()
         return
       }
     } else if cur_len[0] == 2 {
+      fmt.Println("END")
       break
     }
   }
+  conn.Close()
   return
 }
 
-func CommitRequestAdmin(conn *net.Conn, 
+func CommitRequestAdmin(conn net.Conn, 
                  admin_pub_key *rsa.PublicKey,
                  ref_rtn_data *[]byte,
                  sign *[]byte,
@@ -573,17 +667,17 @@ func CommitRequestAdmin(conn *net.Conn,
   sign_buffr := make([]byte, 256)
   var cur_len [1]byte
   //PROJECT VERIF
-  err := binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  err := binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl := sign_buffr[:]
-  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  err = binary.Read(conn, binary.LittleEndian, &cur_len)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl := cur_len[:]
@@ -594,21 +688,21 @@ func CommitRequestAdmin(conn *net.Conn,
                         hash_sl, 
                         sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
   data_buffr := make([]byte, cur_len[0])
-  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &data_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl = data_buffr[:]
@@ -619,61 +713,81 @@ func CommitRequestAdmin(conn *net.Conn,
                         hash_sl, 
                         sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   cur_val = string(data_sl)
   cur_val2 = "initiated.txt"
   is_valid, err = ExistDirFile(&cur_val, &cur_val2)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   if !is_valid {
+    //FOR STANDARD SIDE
+    err = os.Mkdir("waiting/" + cur_val, 0755)
+    if err != nil {
+      conn.Close()
+      return
+    }
+    err = os.WriteFile("waiting/" + cur_val + "/initiated.txt", 
+                      []byte(""), 
+                      0644)
+    if err != nil {
+      conn.Close()
+      return
+    }
+    data_sl, err = os.ReadFile("waiting/initiated.txt")
+    if err != nil {
+      conn.Close()
+      return
+    }
+    data_sl = append(data_sl, []byte(cur_val + "\n")...)
+    err = os.WriteFile("waiting/initiated.txt", data_sl, 0644)
+    if err != nil {
+      conn.Close()
+      return
+    }
+    ////
+    //FOR ADMIN SIDE
     err = os.Mkdir(cur_val, 0755)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
     err = os.WriteFile(cur_val + "/initiated.txt", 
                       []byte(""), 
                       0644)
     if err != nil {
-      (*conn).Close()
-      return
-    }
-    err = os.WriteFile(cur_val + "/commits.txt", 
-                      []byte(""), 
-                      0644)
-    if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
     data_sl, err = os.ReadFile("initiated.txt")
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
     data_sl = append(data_sl, []byte(cur_val + "\n")...)
     err = os.WriteFile("initiated.txt", data_sl, 0644)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
+    ////
   }
   ////
   //BRANCH VERIF
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
-  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  err = binary.Read(conn, binary.LittleEndian, &cur_len)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl = cur_len[:]
@@ -684,21 +798,21 @@ func CommitRequestAdmin(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
   data_buffr = make([]byte, cur_len[0])
-  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &data_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl = data_buffr[:]
@@ -709,47 +823,58 @@ func CommitRequestAdmin(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   cur_valb = string(data_sl)
   cur_val2 = cur_val + "/initiated.txt"
   is_valid, err = ExistDirFile(&cur_valb, &cur_val2)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   if !is_valid {
+    data, err := os.ReadFile(cur_val + "/initiated.txt")
+    if err != nil {
+      conn.Close()
+      return
+    }
+    data = append(data, []byte(cur_valb)...)
+    err = os.WriteFile(cur_val + "/initiated.txt", data, 0644)
+    if err != nil {
+      conn.Close()
+      return
+    }
     cur_val += ("/" + cur_valb)
     err = os.Mkdir(cur_val, 0755)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
     err = os.WriteFile(cur_val + "/commits.txt", []byte(""), 0644)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
     err = os.Mkdir(cur_val + "/data", 0755)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
   }
   ////
   //COMMIT VERIF
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
-  err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+  err = binary.Read(conn, binary.LittleEndian, &cur_len)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl = cur_len[:]
@@ -760,21 +885,21 @@ func CommitRequestAdmin(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   final_cur_len := make([]byte, cur_len[0])
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
-  err = binary.Read(*conn, binary.LittleEndian, &final_cur_len)
+  err = binary.Read(conn, binary.LittleEndian, &final_cur_len)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl = final_cur_len[:]
@@ -785,22 +910,22 @@ func CommitRequestAdmin(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   target_len := ByteSliceToInt(&final_cur_len)
   data_buffr = make([]byte, target_len)
-  err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   sign_sl = sign_buffr[:]
-  err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+  err = binary.Read(conn, binary.LittleEndian, &data_buffr)
   if err != nil {
     CheckDeadLine(err)
-    (*conn).Close()
+    conn.Close()
     return
   }
   data_sl = data_buffr[:]
@@ -811,36 +936,36 @@ func CommitRequestAdmin(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   data, err := os.ReadFile(cur_val + "/commits.txt")
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   is_valid = CompByteSlice(&data_sl, &data)
   if !is_valid {
-    _, err = (*conn).Write(*sign)
+    _, err = conn.Write(*sign)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
-    _, err = (*conn).Write(*ref_rtn_data)
+    _, err = conn.Write(*ref_rtn_data)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
   }
   ////
-  _, err = (*conn).Write(*sign2)
+  _, err = conn.Write(*sign2)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
-  _, err = (*conn).Write(*ref_rtn_data2)
+  _, err = conn.Write(*ref_rtn_data2)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   tmp_val := string(data_sl)
@@ -850,25 +975,36 @@ func CommitRequestAdmin(conn *net.Conn,
     tmp_val2 = string(tmp_val[i]) + tmp_val2
     i--
   }
+  data, err = os.ReadFile(cur_val + "/commits.txt")
+  if err != nil {
+    conn.Close()
+    return
+  }
+  data = append(data, []byte(tmp_val2 + "\n")...)
+  err = os.WriteFile(cur_val + "/commits.txt", data, 0644)
+  if err != nil {
+    conn.Close()
+    return
+  }
   cur_val += ("/data/" + tmp_val2)
   err = os.Mkdir(cur_val, 0755)
   if err != nil {
-    (*conn).Close()
+    conn.Close()
     return
   }
   var cur_name string
   for {
-    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
-    err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+    err = binary.Read(conn, binary.LittleEndian, &cur_len)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
@@ -880,21 +1016,21 @@ func CommitRequestAdmin(conn *net.Conn,
                             hash_sl, 
                             sign_sl)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
     data_buffr = make([]byte, cur_len[0])
-    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
-    err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+    err = binary.Read(conn, binary.LittleEndian, &data_buffr)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
@@ -907,20 +1043,20 @@ func CommitRequestAdmin(conn *net.Conn,
                             hash_sl, 
                             sign_sl)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
-    err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+    err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
-    err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+    err = binary.Read(conn, binary.LittleEndian, &cur_len)
     if err != nil {
       CheckDeadLine(err)
-      (*conn).Close()
+      conn.Close()
       return
     }
     sign_sl = sign_buffr[:]
@@ -932,21 +1068,21 @@ func CommitRequestAdmin(conn *net.Conn,
                             hash_sl, 
                             sign_sl)
     if err != nil {
-      (*conn).Close()
+      conn.Close()
       return
     }
     if cur_len[0] == 0 {
-      err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+      err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
       if err != nil {
         CheckDeadLine(err)
-        (*conn).Close()
+        conn.Close()
         return
       }
       sign_sl = sign_buffr[:]
-      err = binary.Read(*conn, binary.LittleEndian, &cur_len)
+      err = binary.Read(conn, binary.LittleEndian, &cur_len)
       if err != nil {
         CheckDeadLine(err)
-        (*conn).Close()
+        conn.Close()
         return
       }
       sign_sl = sign_buffr[:]
@@ -958,21 +1094,21 @@ func CommitRequestAdmin(conn *net.Conn,
                               hash_sl, 
                               sign_sl)
       if err != nil {
-        (*conn).Close()
+        conn.Close()
         return
       }
       final_cur_len = make([]byte, cur_len[0])
-      err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+      err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
       if err != nil {
         CheckDeadLine(err)
-        (*conn).Close()
+        conn.Close()
         return
       }
       sign_sl = sign_buffr[:]
-      err = binary.Read(*conn, binary.LittleEndian, &final_cur_len)
+      err = binary.Read(conn, binary.LittleEndian, &final_cur_len)
       if err != nil {
         CheckDeadLine(err)
-        (*conn).Close()
+        conn.Close()
         return
       }
       sign_sl = sign_buffr[:]
@@ -984,22 +1120,22 @@ func CommitRequestAdmin(conn *net.Conn,
                               hash_sl, 
                               sign_sl)
       if err != nil {
-        (*conn).Close()
+        conn.Close()
         return
       } 
       target_len = ByteSliceToInt(&final_cur_len)
       data_buffr = make([]byte, target_len)
-      err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
+      err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
       if err != nil {
         CheckDeadLine(err)
-        (*conn).Close()
+        conn.Close()
         return
       }
       sign_sl = sign_buffr[:]
-      err = binary.Read(*conn, binary.LittleEndian, &data_buffr)
+      err = binary.Read(conn, binary.LittleEndian, &data_buffr)
       if err != nil {
         CheckDeadLine(err)
-        (*conn).Close()
+        conn.Close()
         return
       }
       sign_sl = sign_buffr[:]
@@ -1011,18 +1147,18 @@ func CommitRequestAdmin(conn *net.Conn,
                               hash_sl, 
                               sign_sl)
       if err != nil {
-        (*conn).Close()
+        conn.Close()
         return
       }
       err = os.WriteFile(cur_name, data_sl, 0644)
       if err != nil {
-        (*conn).Close()
+        conn.Close()
         return
       }
     } else if cur_len[0] == 1 {
       err = os.Mkdir(cur_name, 0755)
       if err != nil {
-        (*conn).Close()
+        conn.Close()
         return
       }
     } else if cur_len[0] == 2 {
