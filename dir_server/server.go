@@ -378,7 +378,6 @@ func CommitRequestStandard(conn net.Conn,
       return
     }
     cur_val += ("/" + cur_valb)
-    fmt.Println("cur_val:", cur_val)
     err = os.Mkdir(cur_val, 0755)
     if err != nil {
       conn.Close()
@@ -805,7 +804,6 @@ func CommitRequestStandard(conn net.Conn,
         return
       }
     } else if cur_len[0] == 2 {
-      fmt.Println("END")
       break
     }
   }
