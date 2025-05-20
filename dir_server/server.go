@@ -139,7 +139,6 @@ func ReceiveRequest(conn *net.Conn,
   sign_rcv_sl = sign_rcv[:]
   err = binary.Read(*conn, binary.LittleEndian, &n)
   n_sl = n[:]
-  fmt.Println("n:", n)
   if err != nil {
     CheckDeadLine(err)
     (*conn).Close()
@@ -150,18 +149,13 @@ func ReceiveRequest(conn *net.Conn,
                           crypto.SHA256, 
                           hash_sl, 
                           sign_rcv_sl)
-    fmt.Println("pub_key:", admin_pub_key)
-    fmt.Println("sign_rcv:", sign_rcv, len(sign_rcv))
-    fmt.Println("hash_sl:", hash_sl)
     if err != nil {
        err = rsa.VerifyPKCS1v15(standard_pub_key,
                           crypto.SHA256, 
                           hash_sl, 
                           sign_rcv_sl)
-       fmt.Println("Ok")
        if err != nil {
          CheckDeadLine(err)
-         fmt.Println("OkB")
          (*conn).Close()
          return
        }
@@ -572,7 +566,6 @@ func CommitRequestAdmin(conn *net.Conn,
                  sign *[]byte,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte) {
-  fmt.Println("Admin")
   var cur_val string
   var cur_valb string
   var cur_val2 string
@@ -721,7 +714,6 @@ func CommitRequestAdmin(conn *net.Conn,
   }
   cur_valb = string(data_sl)
   cur_val2 = cur_val + "/initiated.txt"
-  fmt.Println("cur_val2:", cur_val2)
   is_valid, err = ExistDirFile(&cur_valb, &cur_val2)
   if err != nil {
     (*conn).Close()
@@ -729,7 +721,6 @@ func CommitRequestAdmin(conn *net.Conn,
   }
   if !is_valid {
     cur_val += ("/" + cur_valb)
-    fmt.Println("cur_val:", cur_val)
     err = os.Mkdir(cur_val, 0755)
     if err != nil {
       (*conn).Close()
@@ -773,7 +764,6 @@ func CommitRequestAdmin(conn *net.Conn,
     return
   }
   final_cur_len := make([]byte, cur_len[0])
-  fmt.Println("okok", final_cur_len)
   err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
     CheckDeadLine(err)
@@ -799,7 +789,6 @@ func CommitRequestAdmin(conn *net.Conn,
     return
   }
   target_len := ByteSliceToInt(&final_cur_len)
-  fmt.Println("target_len:", target_len)
   data_buffr = make([]byte, target_len)
   err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
   if err != nil {
@@ -814,8 +803,6 @@ func CommitRequestAdmin(conn *net.Conn,
     (*conn).Close()
     return
   }
-  fmt.Println("data:", data_buffr)
-  fmt.Println("sign:", sign_buffr)
   data_sl = data_buffr[:]
   hash_bffr = sha256.Sum256(data_sl)
   hash_sl = hash_bffr[:]
@@ -824,11 +811,9 @@ func CommitRequestAdmin(conn *net.Conn,
                           hash_sl, 
                           sign_sl)
   if err != nil {
-    fmt.Println("okI")
     (*conn).Close()
     return
   }
-  fmt.Println("cur_valB:", cur_val)
   data, err := os.ReadFile(cur_val + "/commits.txt")
   if err != nil {
     (*conn).Close()
@@ -848,8 +833,6 @@ func CommitRequestAdmin(conn *net.Conn,
     }
   }
   ////
-  fmt.Println("sign2", *sign2, len(*sign2))
-  fmt.Println("ref_rtn_data2", *ref_rtn_data2)
   _, err = (*conn).Write(*sign2)
   if err != nil {
     (*conn).Close()
@@ -867,10 +850,7 @@ func CommitRequestAdmin(conn *net.Conn,
     tmp_val2 = string(tmp_val[i]) + tmp_val2
     i--
   }
-  fmt.Println("tmp_val:", tmp_val)
-  fmt.Println("tmp_val2:", tmp_val2)
   cur_val += ("/data/" + tmp_val2)
-  fmt.Println("cur_val:", cur_val)
   err = os.Mkdir(cur_val, 0755)
   if err != nil {
     (*conn).Close()
@@ -956,7 +936,6 @@ func CommitRequestAdmin(conn *net.Conn,
       return
     }
     if cur_len[0] == 0 {
-      fmt.Println("file_val")
       err = binary.Read(*conn, binary.LittleEndian, &sign_buffr)
       if err != nil {
         CheckDeadLine(err)
@@ -1035,23 +1014,18 @@ func CommitRequestAdmin(conn *net.Conn,
         (*conn).Close()
         return
       }
-      fmt.Println("cur_val:", cur_val, cur_name)
       err = os.WriteFile(cur_name, data_sl, 0644)
       if err != nil {
         (*conn).Close()
         return
       }
-      fmt.Println("ok")
     } else if cur_len[0] == 1 {
-      fmt.Println("dir_val")
-      fmt.Println("cur_val:", cur_val, cur_name)
       err = os.Mkdir(cur_name, 0755)
       if err != nil {
         (*conn).Close()
         return
       }
     } else if cur_len[0] == 2 {
-      fmt.Println("Stop")
       break
     }
   }
