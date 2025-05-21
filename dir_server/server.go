@@ -11,6 +11,7 @@ import (
   "crypto/rand"
   "net"
   "time"
+  "sync"
 )
 
 var mu sync.RWMutex
@@ -67,11 +68,13 @@ func CompByteSlice(x *[]byte, x2 *[]byte) bool {
 }
 
 func ExistDirFile(x *string, file_name *string) (bool, error) {
+  mu.RLock()
   data, err := os.ReadFile(*file_name)
-  var cur_val string = ""
   if err != nil {
     return false, err
   }
+  mu.RUnlock()
+  var cur_val string = ""
   n := len(*x)
   var i2 int
   for i := 0; i < len(data); i++ {
@@ -389,12 +392,15 @@ func CommitRequestStandard(conn net.Conn,
     return
   }
   if !is_valid {
+    mu.RLock()
     data, err := os.ReadFile(cur_val + "/initiated.txt")
     if err != nil {
       conn.Close()
       return
     }
+    mu.RUnlock()
     data = append(data, []byte(cur_valb + "\n")...)
+    mu.Lock()
     err = os.WriteFile(cur_val + "/initiated.txt", data, 0644)
     if err != nil {
       conn.Close()
@@ -416,6 +422,7 @@ func CommitRequestStandard(conn net.Conn,
       conn.Close()
       return
     }
+    mu.Unlock()
   }
   ////
   //COMMIT VERIF
@@ -524,11 +531,13 @@ func CommitRequestStandard(conn net.Conn,
     conn.Close()
     return
   }
+  mu.RLock()
   data, err := os.ReadFile(cur_val + "/commits.txt")
   if err != nil {
     conn.Close()
     return
   }
+  mu.RUnlock()
   is_valid = CompByteSlice(&data_sl, &data)
   if !is_valid {
     err = conn.SetDeadline(time.Now().Add(1 * time.Second))
@@ -580,12 +589,15 @@ func CommitRequestStandard(conn net.Conn,
     tmp_val2 = string(tmp_val[i]) + tmp_val2
     i--
   }
+  mu.RLock()
   data, err = os.ReadFile(cur_val + "/commits.txt")
   if err != nil {
     conn.Close()
     return
   }
+  mu.RUnlock()
   data = append(data, []byte(tmp_val2 + "\n")...)
+  mu.Lock()
   err = os.WriteFile(cur_val + "/commits.txt", data, 0644)
   if err != nil {
     conn.Close()
@@ -597,6 +609,7 @@ func CommitRequestStandard(conn net.Conn,
     conn.Close()
     return
   }
+  mu.Unlock()
   var cur_name string
   for {
     err = conn.SetDeadline(time.Now().Add(1 * time.Second))
@@ -815,17 +828,21 @@ func CommitRequestStandard(conn net.Conn,
         conn.Close()
         return
       }
+      mu.Lock()
       err = os.WriteFile("waiting/" + cur_name, data_sl, 0644)
       if err != nil {
         conn.Close()
         return
       }
+      mu.Unlock()
     } else if cur_len[0] == 1 {
+      mu.Lock()
       err = os.Mkdir("waiting/" + cur_name, 0755)
       if err != nil {
         conn.Close()
         return
       }
+      mu.Unlock()
     } else if cur_len[0] == 2 {
       break
     }
@@ -925,6 +942,7 @@ func CommitRequestAdmin(conn net.Conn,
   }
   if !is_valid {
     //FOR STANDARD SIDE
+    mu.Lock()
     err = os.Mkdir("waiting/" + cur_val, 0755)
     if err != nil {
       conn.Close()
@@ -937,12 +955,16 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
+    mu.Unlock()
+    mu.RLock()
     data_sl, err = os.ReadFile("waiting/initiated.txt")
     if err != nil {
       conn.Close()
       return
     }
+    mu.RUnlock()
     data_sl = append(data_sl, []byte(cur_val + "\n")...)
+    mu.Lock()
     err = os.WriteFile("waiting/initiated.txt", data_sl, 0644)
     if err != nil {
       conn.Close()
@@ -962,17 +984,22 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
+    mu.Unlock()
+    mu.RLock()
     data_sl, err = os.ReadFile("initiated.txt")
     if err != nil {
       conn.Close()
       return
     }
+    mu.RUnlock()
     data_sl = append(data_sl, []byte(cur_val + "\n")...)
+    mu.Lock()
     err = os.WriteFile("initiated.txt", data_sl, 0644)
     if err != nil {
       conn.Close()
       return
     }
+    mu.Unlock()
     ////
   }
   ////
@@ -1054,12 +1081,15 @@ func CommitRequestAdmin(conn net.Conn,
     return
   }
   if !is_valid {
+    mu.RLock()
     data, err := os.ReadFile(cur_val + "/initiated.txt")
     if err != nil {
       conn.Close()
       return
     }
+    mu.RUnlock()
     data = append(data, []byte(cur_valb + "\n")...)
+    mu.Lock()
     err = os.WriteFile(cur_val + "/initiated.txt", data, 0644)
     if err != nil {
       conn.Close()
@@ -1081,6 +1111,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
+    mu.Unlock()
   }
   ////
   //COMMIT VERIF
@@ -1189,11 +1220,13 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  mu.RLock()
   data, err := os.ReadFile(cur_val + "/commits.txt")
   if err != nil {
     conn.Close()
     return
   }
+  mu.RUnlock()
   is_valid = CompByteSlice(&data_sl, &data)
   if !is_valid {
     err = conn.SetDeadline(time.Now().Add(1 * time.Second))
@@ -1245,12 +1278,15 @@ func CommitRequestAdmin(conn net.Conn,
     tmp_val2 = string(tmp_val[i]) + tmp_val2
     i--
   }
+  mu.RLock()
   data, err = os.ReadFile(cur_val + "/commits.txt")
   if err != nil {
     conn.Close()
     return
   }
+  mu.RUnlock()
   data = append(data, []byte(tmp_val2 + "\n")...)
+  mu.Lock()
   err = os.WriteFile(cur_val + "/commits.txt", data, 0644)
   if err != nil {
     conn.Close()
@@ -1262,6 +1298,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  mu.Unlock()
   var cur_name string
   for {
     err = conn.SetDeadline(time.Now().Add(1 * time.Second))
@@ -1480,17 +1517,21 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
+      mu.Lock()
       err = os.WriteFile(cur_name, data_sl, 0644)
       if err != nil {
         conn.Close()
         return
       }
+      mu.Unlock()
     } else if cur_len[0] == 1 {
+      mu.Lock()
       err = os.Mkdir(cur_name, 0755)
       if err != nil {
         conn.Close()
         return
       }
+      mu.Unlock()
     } else if cur_len[0] == 2 {
       break
     }
