@@ -13,7 +13,7 @@ import (
   "time"
 )
 
-var current_connections int = 0
+var mu sync.RWMutex
 
 func IntToByteSlice(x int) []byte {
   if x == 256 {
@@ -1507,7 +1507,8 @@ func SyncRequestStandard(conn net.Conn,
 
 func SyncRequestAdmin(conn net.Conn, 
                  admin_pub_key *rsa.PublicKey) {
-
+  //var sign_sl []byte
+  //var data_sl []byte
 }
 
 func main () {
