@@ -9,7 +9,6 @@ import (
   "path/filepath"
   "encoding/hex"
   "encoding/pem"
-  "encoding/binary"
   "crypto"
   "crypto/x509"
   "crypto/rand"
@@ -3389,13 +3388,13 @@ func main() {
       conn.Close()
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, sign)
+    _, err = conn.Write(sign)
     if err != nil {
       fmt.Println("Error:", err)
       conn.Close()
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, cur_len)
+    _, err = conn.Write(cur_len)
     if err != nil {
       fmt.Println("Error:", err)
       conn.Close()
