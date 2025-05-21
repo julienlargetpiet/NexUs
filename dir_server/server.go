@@ -16,6 +16,28 @@ import (
 
 var current_connections int = 0
 
+func IntToByteSlice(x int) []byte {
+  if x == 256 {
+    return []byte{0, 0}
+  } else if x < 256 {
+    return []byte{byte(x)}
+  }
+  var rtn_byte []byte
+  var rest int = x % 256
+  rtn_byte = append(rtn_byte, byte(rest))
+  x -= rest
+  x /= 256
+  for x > 256 {
+    rtn_byte = append(rtn_byte, 255)
+    rest = x % 256
+    rtn_byte = append(rtn_byte, byte(rest))
+    x -= rest
+    x /= 256
+  }
+  rtn_byte = append(rtn_byte, byte(x - 1))
+  return rtn_byte
+}
+
 func ByteSliceToInt(x *[]byte) int {
   var rtn_int int = 256
   var ref_mult int = 256
@@ -122,10 +144,10 @@ func ReceiveRequest(conn net.Conn,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte,
                  sign2b *[]byte) {
-  var n [1]byte
+  var n = make([]byte, 1)
   var n_sl []byte
   var err error
-  var sign_rcv [256]byte
+  var sign_rcv = make([]byte, 256)
   var sign_rcv_sl []byte
   var hash_buffr [32]byte
   var hash_sl []byte
@@ -134,7 +156,7 @@ func ReceiveRequest(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &sign_rcv)
+  _, err = conn.Read(sign_rcv)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -146,8 +168,10 @@ func ReceiveRequest(conn net.Conn,
     return
   }
   sign_rcv_sl = sign_rcv[:]
-  err = binary.Read(conn, binary.LittleEndian, &n)
+  _, err = conn.Read(n)
   n_sl = n[:]
+  fmt.Println(sign_rcv)
+  fmt.Println(n_sl)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -164,6 +188,7 @@ func ReceiveRequest(conn net.Conn,
                           hash_sl, 
                           sign_rcv_sl)
        if err != nil {
+         fmt.Println("okl")
          CheckDeadLine(err)
          conn.Close()
          return
@@ -176,7 +201,8 @@ func ReceiveRequest(conn net.Conn,
                     ref_rtn_data2,
                     sign2)
        } else {
-
+         SyncRequestStandard(conn, 
+           standard_pub_key)
        }
     }
     if n[0] == 0 {
@@ -187,7 +213,8 @@ func ReceiveRequest(conn net.Conn,
                     ref_rtn_data2,
                     sign2b)
     } else {
-      
+      SyncRequestAdmin(conn, 
+                    admin_pub_key)
     }
   }
   return
@@ -199,6 +226,7 @@ func CommitRequestStandard(conn net.Conn,
                  sign *[]byte,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte) {
+  fmt.Println("Standard")
   var cur_val string
   var cur_valb string
   var cur_val2 string
@@ -817,19 +845,20 @@ func CommitRequestAdmin(conn net.Conn,
                  sign *[]byte,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte) {
+  fmt.Println("Admin")
   var cur_val string
   var cur_valb string
   var cur_val2 string
   var is_valid bool
   sign_buffr := make([]byte, 256)
-  var cur_len [1]byte
+  var cur_len = make([]byte, 1)
   //PROJECT VERIF
   err := conn.SetDeadline(time.Now().Add(1 * time.Second))
   if err != nil {
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+  _, err = conn.Read(sign_buffr)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -841,7 +870,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &cur_len)
+  _, err = conn.Read(cur_len)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -863,7 +892,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+  _, err = conn.Read(sign_buffr)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -876,7 +905,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &data_buffr)
+  _, err = conn.Read(data_buffr)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -959,7 +988,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+  _, err = conn.Read(sign_buffr)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -971,7 +1000,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &cur_len)
+  _, err = conn.Read(cur_len)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -993,7 +1022,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+  _, err = conn.Read(sign_buffr)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -1006,7 +1035,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &data_buffr)
+  _, err = conn.Read(data_buffr)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -1066,7 +1095,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+  _, err = conn.Read(sign_buffr)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -1078,7 +1107,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &cur_len)
+  _, err = conn.Read(cur_len)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -1101,7 +1130,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+  _, err = conn.Read(sign_buffr)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -1113,7 +1142,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &final_cur_len)
+  _, err = conn.Read(final_cur_len)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -1137,7 +1166,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+  _, err = conn.Read(sign_buffr)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -1149,7 +1178,7 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  err = binary.Read(conn, binary.LittleEndian, &data_buffr)
+  _, err = conn.Read(data_buffr)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -1246,7 +1275,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+    _, err = conn.Read(sign_buffr)
     if err != nil {
       CheckDeadLine(err)
       conn.Close()
@@ -1258,7 +1287,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    err = binary.Read(conn, binary.LittleEndian, &cur_len)
+    _, err = conn.Read(cur_len)
     if err != nil {
       CheckDeadLine(err)
       conn.Close()
@@ -1282,7 +1311,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+    _, err = conn.Read(sign_buffr)
     if err != nil {
       CheckDeadLine(err)
       conn.Close()
@@ -1294,7 +1323,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    err = binary.Read(conn, binary.LittleEndian, &data_buffr)
+    _, err = conn.Read(data_buffr)
     if err != nil {
       CheckDeadLine(err)
       conn.Close()
@@ -1318,7 +1347,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+    _, err = conn.Read(sign_buffr)
     if err != nil {
       CheckDeadLine(err)
       conn.Close()
@@ -1330,7 +1359,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    err = binary.Read(conn, binary.LittleEndian, &cur_len)
+    _, err = conn.Read(cur_len)
     if err != nil {
       CheckDeadLine(err)
       conn.Close()
@@ -1354,7 +1383,7 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+      _, err = conn.Read(sign_buffr)
       if err != nil {
         CheckDeadLine(err)
         conn.Close()
@@ -1366,7 +1395,7 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      err = binary.Read(conn, binary.LittleEndian, &cur_len)
+      _, err = conn.Read(cur_len)
       if err != nil {
         CheckDeadLine(err)
         conn.Close()
@@ -1390,7 +1419,7 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+      _, err = conn.Read(sign_buffr)
       if err != nil {
         CheckDeadLine(err)
         conn.Close()
@@ -1402,7 +1431,7 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      err = binary.Read(conn, binary.LittleEndian, &final_cur_len)
+      _, err = conn.Read(final_cur_len)
       if err != nil {
         CheckDeadLine(err)
         conn.Close()
@@ -1427,7 +1456,7 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      err = binary.Read(conn, binary.LittleEndian, &sign_buffr)
+      _, err = conn.Read(sign_buffr)
       if err != nil {
         CheckDeadLine(err)
         conn.Close()
@@ -1439,7 +1468,7 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      err = binary.Read(conn, binary.LittleEndian, &data_buffr)
+      _, err = conn.Read(data_buffr)
       if err != nil {
         CheckDeadLine(err)
         conn.Close()
@@ -1476,12 +1505,13 @@ func CommitRequestAdmin(conn net.Conn,
   return
 }
 
-func SyncRequestStandard(conn *net.Conn, 
+func SyncRequestStandard(conn net.Conn, 
                  standard_pub_key *rsa.PublicKey) {
-
+  //var sign_sl []byte
+  //var data_sl []byte
 }
 
-func SyncRequestAdmin(conn *net.Conn, 
+func SyncRequestAdmin(conn net.Conn, 
                  admin_pub_key *rsa.PublicKey) {
 
 }
