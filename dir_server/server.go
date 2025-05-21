@@ -169,8 +169,6 @@ func ReceiveRequest(conn net.Conn,
   sign_rcv_sl = sign_rcv[:]
   _, err = conn.Read(n)
   n_sl = n[:]
-  fmt.Println(sign_rcv)
-  fmt.Println(n_sl)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
@@ -187,7 +185,6 @@ func ReceiveRequest(conn net.Conn,
                           hash_sl, 
                           sign_rcv_sl)
        if err != nil {
-         fmt.Println("okl")
          CheckDeadLine(err)
          conn.Close()
          return
@@ -225,7 +222,6 @@ func CommitRequestStandard(conn net.Conn,
                  sign *[]byte,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte) {
-  fmt.Println("Standard")
   var cur_val string
   var cur_valb string
   var cur_val2 string
@@ -311,6 +307,7 @@ func CommitRequestStandard(conn net.Conn,
   }
   if !is_valid {
     conn.Close()
+    return
   }
   cur_val = "waiting/" + cur_val
   ////
@@ -388,7 +385,6 @@ func CommitRequestStandard(conn net.Conn,
   cur_val2 = cur_val + "/initiated.txt"
   is_valid, err = ExistDirFile(&cur_valb, &cur_val2)
   if err != nil {
-    fmt.Println("ici", err)
     conn.Close()
     return
   }
@@ -844,7 +840,6 @@ func CommitRequestAdmin(conn net.Conn,
                  sign *[]byte,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte) {
-  fmt.Println("Admin")
   var cur_val string
   var cur_valb string
   var cur_val2 string
@@ -1562,7 +1557,7 @@ func main () {
                                  crypto.SHA256,
                                  hash_slice)
   if err != nil {
-    fmt.Println(err)
+    fmt.Println("Error:", err)
     return
   }
   signb, err := rsa.SignPKCS1v15(rand.Reader, 
@@ -1570,7 +1565,7 @@ func main () {
                                  crypto.SHA256,
                                  hash_slice)
   if err != nil {
-    fmt.Println(err)
+    fmt.Println("Error:", err)
     return
   }
   ref_data2 := []byte("onsync")
@@ -1581,7 +1576,7 @@ func main () {
                                  crypto.SHA256,
                                  hash_slice)
   if err != nil {
-    fmt.Println(err)
+    fmt.Println("Error:", err)
     return
   }
   sign2b, err := rsa.SignPKCS1v15(rand.Reader, 
@@ -1589,7 +1584,7 @@ func main () {
                                  crypto.SHA256,
                                  hash_slice)
   if err != nil {
-    fmt.Println(err)
+    fmt.Println("Error:", err)
     return
   }
   data, err = os.ReadFile("admin_pubKey.pem")
