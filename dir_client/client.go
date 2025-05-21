@@ -45,6 +45,21 @@ func IntToByteSlice(x int) []byte {
   return rtn_byte
 }
 
+func ByteSliceToInt(x *[]byte) int {
+  var rtn_int int = 256
+  var ref_mult int = 256
+  var i int = len(*x) - 1
+  if i == 0 {
+    return int((*x)[0])
+  }
+  for i > -1 {
+    rtn_int = ((int((*x)[i]) + 1) * ref_mult + int((*x)[i - 1]))
+    ref_mult = rtn_int
+    i -= 2
+  }
+  return rtn_int
+}
+
 func GoodIP(x *string) bool {
   var n int  = len(*x)
   var i int = 0
@@ -625,15 +640,11 @@ func TreeSend(conn *net.Conn,
       if err != nil {
         return err
       }
-      err = binary.Write(*conn, 
-                         binary.LittleEndian, 
-                         sign_sl)
+      _, err = (*conn).Write(sign_sl)
       if err != nil {
         return err
       }
-      err = binary.Write(*conn, 
-                         binary.LittleEndian, 
-                         cur_send_len)
+      _, err = (*conn).Write(cur_send_len)
       if err != nil {
         return err
       }
@@ -646,15 +657,11 @@ func TreeSend(conn *net.Conn,
       if err != nil {
         return err
       }
-      err = binary.Write(*conn, 
-                         binary.LittleEndian, 
-                         sign_sl)
+      _, err = (*conn).Write(sign_sl)
       if err != nil {
         return err
       }
-      err = binary.Write(*conn, 
-                         binary.LittleEndian, 
-                         cur_send)
+      _, err = (*conn).Write(cur_send)
       if err != nil {
         return err
       }
@@ -669,15 +676,11 @@ func TreeSend(conn *net.Conn,
         if err != nil {
           return err
         }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           sign_sl)
+        _, err = (*conn).Write(sign_sl)
         if err != nil {
           return err
         }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           dir_val)
+        _, err = (*conn).Write(dir_val)
         if err != nil {
           return err
         }
@@ -692,15 +695,11 @@ func TreeSend(conn *net.Conn,
         if err != nil {
           return err
         }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           sign_sl)
+        _, err = (*conn).Write(sign_sl)
         if err != nil {
           return err
         }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           file_val)
+        _, err = (*conn).Write(file_val)
         if err != nil {
           return err
         }
@@ -719,15 +718,11 @@ func TreeSend(conn *net.Conn,
         if err != nil {
           return err
         }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           sign_sl)
+        _, err = (*conn).Write(sign_sl)
         if err != nil {
           return err
         }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           cur_send_len)
+        _, err = (*conn).Write(cur_send_len)
         if err != nil {
           return err
         }
@@ -740,15 +735,11 @@ func TreeSend(conn *net.Conn,
         if err != nil {
           return err
         }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           sign_sl)
+        _, err = (*conn).Write(sign_sl)
         if err != nil {
           return err
         }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           final_cur_send_len)
+        _, err = (*conn).Write(final_cur_send_len)
         if err != nil {
           return err
         }
@@ -761,15 +752,11 @@ func TreeSend(conn *net.Conn,
         if err != nil {
           return err
         }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           sign_sl)
+        _, err = (*conn).Write(sign_sl)
         if err != nil {
           return err
         }
-        err = binary.Write(*conn, 
-                           binary.LittleEndian, 
-                           cur_send)
+        _, err = (*conn).Write(cur_send)
         if err != nil {
           return err
         } 
@@ -790,15 +777,11 @@ func TreeSend(conn *net.Conn,
   if err != nil {
     return err
   }
-  err = binary.Write(*conn, 
-                     binary.LittleEndian, 
-                     sign_sl)
+  _, err = (*conn).Write(sign_sl)
   if err != nil {
     return err
   }
-  err = binary.Write(*conn, 
-                     binary.LittleEndian, 
-                     cur_send_len)
+  _, err = (*conn).Write(cur_send_len)
   if err != nil {
     return err
   }
@@ -811,15 +794,11 @@ func TreeSend(conn *net.Conn,
   if err != nil {
     return err
   }
-  err = binary.Write(*conn, 
-                     binary.LittleEndian, 
-                     sign_sl)
+  _, err = (*conn).Write(sign_sl)
   if err != nil {
     return err
   }
-  err = binary.Write(*conn, 
-                     binary.LittleEndian, 
-                     cur_send)
+  _, err = (*conn).Write(cur_send)
   if err != nil {
     return err
   }
@@ -832,15 +811,11 @@ func TreeSend(conn *net.Conn,
   if err != nil {
     return err
   }
-  err = binary.Write(*conn, 
-                     binary.LittleEndian, 
-                     sign_sl)
+  _, err = (*conn).Write(sign_sl)
   if err != nil {
     return err
   }
-  err = binary.Write(*conn, 
-                     binary.LittleEndian, 
-                     end_val)
+  _, err = (*conn).Write(end_val)
   if err != nil {
     return err
   } 
@@ -3087,8 +3062,18 @@ func main() {
       fmt.Println(err)
       return
     }
-    binary.Write(conn, binary.LittleEndian, sign)
-    binary.Write(conn, binary.LittleEndian, cur_len)
+    _, err = conn.Write(sign)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
     ////
     //PROJECT SEND
     tmp_val := []byte(cur_val3)
@@ -3103,12 +3088,12 @@ func main() {
       fmt.Println("Error:", err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, sign)
+    _, err = conn.Write(sign)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, cur_len)
+    _, err = conn.Write(cur_len)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -3123,12 +3108,12 @@ func main() {
       fmt.Println(err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, sign)
+    _, err = conn.Write(sign)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, tmp_val)
+    _, err = conn.Write(tmp_val)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -3152,12 +3137,12 @@ func main() {
       fmt.Println(err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, sign)
+    _, err = conn.Write(sign)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, cur_len)
+    _, err = conn.Write(cur_len)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -3172,12 +3157,12 @@ func main() {
       fmt.Println(err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, sign)
+    _, err = conn.Write(sign)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, data)
+    _, err = conn.Write(data)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -3202,12 +3187,12 @@ func main() {
       fmt.Println(err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, sign)
+    _, err = conn.Write(sign)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, cur_len)
+    _, err = conn.Write(cur_len)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -3222,12 +3207,12 @@ func main() {
       fmt.Println(err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, sign)
+    _, err = conn.Write(sign)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, final_cur_len)
+    _, err = conn.Write(final_cur_len)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -3242,12 +3227,12 @@ func main() {
       fmt.Println(err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, sign)
+    _, err = conn.Write(sign)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
-    err = binary.Write(conn, binary.LittleEndian, data)
+    _, err = conn.Write(data)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -3301,9 +3286,150 @@ func main() {
     return
   }
 
-  //if frst_arg == "sync" {
+  if frst_arg == "sync" {
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    branch := string(data)
+    cur_val2 = base_dir + cur_val3 + "/" + branch
+    data, err = os.ReadFile(base_dir + "pubKey.pem")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if len(data) == 0 {
+      fmt.Println("Error: 'pubKey.pem' has no pub key, make sure to import the standard public key from the NexUs server")
+      return
+    }
+    block, _ := pem.Decode(data)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if block == nil {
+      fmt.Println("Error: failed to decode the public key")
+      return
+    }
+    if block.Type != "RSA PUBLIC KEY" {
+      fmt.Println("Error: not decoding an RSA public key")
+      return
+    }
+    pub_key, err := x509.ParsePKCS1PublicKey(block.Bytes)
+    data, err = os.ReadFile(base_dir + "privateKey.pem")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    fmt.Println(pub_key)
+    if len(data) == 0 {
+      fmt.Println("Error: 'privateKey.pem' has no pub key, make sure to import the standard public key from the NexUs server")
+      return
+    }
+    block, _ = pem.Decode(data)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if block == nil {
+      fmt.Println("Error: failed to decode the private key")
+      return
+    }
+    if block.Type != "RSA PRIVATE KEY" {
+      fmt.Println("Error: not decoding an RSA private key")
+      return
+    }
+    private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "/host_info.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if len(data) == 0 {
+      fmt.Println("Error: no host info provided")
+      return
+    }
+    host_info := string(data)
+    conn, err := net.Dial("tcp", host_info)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    cur_len := []byte{1}
+    hash_buffr := sha256.Sum256(cur_len)
+    hash_sl := hash_buffr[:]
+    sign, err := rsa.SignPKCS1v15(rand.Reader,
+                                 private_key,
+                                 crypto.SHA256,
+                                 hash_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    err = binary.Write(conn, binary.LittleEndian, sign)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    err = binary.Write(conn, binary.LittleEndian, cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    final_cur_len := make([]byte, cur_len[0])
+    _, err = conn.Read(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    target_len := ByteSliceToInt(&final_cur_len)
+    tmp_val := make([]byte, target_len)
+    _, err = conn.Read(tmp_val)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    data, err = os.ReadFile(cur_val2 + "/commits.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
 
-  //}
+  }
 
   //if frst_arg == "get" {
 
