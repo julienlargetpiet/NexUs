@@ -44,15 +44,15 @@ func IntToByteSlice(x int) []byte {
   return rtn_byte
 }
 
-func ByteSliceToInt(x *[]byte) int {
+func ByteSliceToInt(x []byte) int {
   var rtn_int int = 256
   var ref_mult int = 256
-  var i int = len(*x) - 1
+  var i int = len(x) - 1
   if i == 0 {
-    return int((*x)[0])
+    return int(x[0])
   }
   for i > -1 {
-    rtn_int = ((int((*x)[i]) + 1) * ref_mult + int((*x)[i - 1]))
+    rtn_int = ((int(x[i]) + 1) * ref_mult + int(x[i - 1]))
     ref_mult = rtn_int
     i -= 2
   }
@@ -3413,7 +3413,7 @@ func main() {
       conn.Close()
       return
     }
-    target_len := ByteSliceToInt(&final_cur_len)
+    target_len := ByteSliceToInt(final_cur_len)
     tmp_val := make([]byte, target_len)
     _, err = conn.Read(tmp_val)
     if err != nil {
