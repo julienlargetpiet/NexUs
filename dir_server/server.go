@@ -1515,9 +1515,203 @@ func CommitRequestAdmin(conn net.Conn,
 func SyncRequestStandard(conn net.Conn, 
                  standard_pub_key *rsa.PublicKey,
                  standard_private_key *rsa.PrivateKey) {
+  var data_sl []byte
+  var cur_len = make([]byte, 1)
+  var sign_sl = make([]byte, 256)
+  var hash_buffr [32]byte
+  var hash_sl []byte
+  //PROJECT VERIF
+  err := conn.SetDeadline(time.Now().Add(1 * time.Second))
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(cur_len)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  data_sl = make([]byte, cur_len[0])
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(data_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(data_sl)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  tmp_val := string(data_sl)
+  tmp_val2 := "waiting/initiated.txt"
+  is_valid, err := ExistDirFile(&tmp_val, &tmp_val2)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  if !is_valid {
+    conn.Close()
+    return
+  }
+  ////
+  //BRANCH VERIF
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(cur_len)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  data_sl = make([]byte, cur_len[0])
+  _, err = conn.Read(data_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(data_sl)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(standard_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  ref_tmp_val := "waiting/" + tmp_val
+  tmp_val2 = ref_tmp_val + "/initiated.txt"
+  tmp_val = string(data_sl)
+  is_valid, err = ExistDirFile(&tmp_val, &tmp_val2)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  if !is_valid {
+    conn.Close()
+    return
+  }
+  ////
+  //SENDING COMMITS HISTORY
+  mu.Lock()
+  data, err := os.ReadFile(ref_tmp_val + "/" + tmp_val + "/commits.txt")
+  if err != nil {
+    conn.Close()
+    return
+  }
+  mu.Unlock()
+  final_cur_len := IntToByteSlice(len(data))
+  cur_len = []byte{byte(len(final_cur_len))}
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  sign, err := rsa.SignPKCS1v15(rand.Reader,
+                               standard_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign)
+  if err != nil {
+    conn.Close()
+    return
+  }
+   _, err = conn.Write(cur_len)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(final_cur_len)
+  hash_sl = hash_buffr[:]
+  sign, err = rsa.SignPKCS1v15(rand.Reader,
+                               standard_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign)
+  if err != nil {
+    conn.Close()
+    return
+  }
+   _, err = conn.Write(final_cur_len)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(data)
+  hash_sl = hash_buffr[:]
+  sign, err = rsa.SignPKCS1v15(rand.Reader,
+                               standard_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign)
+  if err != nil {
+    conn.Close()
+    return
+  }
+   _, err = conn.Write(data)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  conn.Close()
+  ////
   return
-  //var sign_sl []byte
-  //var data_sl []byte
 }
 
 func SyncRequestAdmin(conn net.Conn, 
@@ -1717,6 +1911,7 @@ func SyncRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  conn.Close()
   ////
   return
 }
