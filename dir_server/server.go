@@ -197,7 +197,6 @@ func ReceiveRequest(conn net.Conn,
          return
        }
        if n[0] == 0 {
-         fmt.Println("Standard commit")
          CommitRequestStandard(conn, 
                     standard_pub_key,
                     ref_rtn_data,
@@ -1516,7 +1515,6 @@ func CommitRequestAdmin(conn net.Conn,
 func SyncRequestStandard(conn net.Conn, 
                  standard_pub_key *rsa.PublicKey,
                  standard_private_key *rsa.PrivateKey) {
-  fmt.Println("Standard")
   return
   //var sign_sl []byte
   //var data_sl []byte
@@ -1525,7 +1523,6 @@ func SyncRequestStandard(conn net.Conn,
 func SyncRequestAdmin(conn net.Conn, 
                  admin_pub_key *rsa.PublicKey,
                  admin_private_key *rsa.PrivateKey) {
-  fmt.Println("Admin")
   var data_sl []byte
   var cur_len = make([]byte, 1)
   var sign_sl = make([]byte, 256)
@@ -1558,9 +1555,7 @@ func SyncRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("ok")
   data_sl = make([]byte, cur_len[0])
-  fmt.Println(data_sl)
   _, err = conn.Read(sign_sl)
   if err != nil {
     conn.Close()
@@ -1583,7 +1578,6 @@ func SyncRequestAdmin(conn net.Conn,
     return
   }
   tmp_val := string(data_sl)
-  fmt.Println(tmp_val)
   tmp_val2 := "initiated.txt"
   is_valid, err := ExistDirFile(&tmp_val, &tmp_val2)
   if err != nil {
@@ -1591,7 +1585,6 @@ func SyncRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println(is_valid)
   if !is_valid {
     conn.Close()
     return
@@ -1608,7 +1601,6 @@ func SyncRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("suite")
   hash_buffr = sha256.Sum256(cur_len)
   hash_sl = hash_buffr[:]
   err = rsa.VerifyPKCS1v15(admin_pub_key,
@@ -1642,7 +1634,6 @@ func SyncRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("suite2")
   ref_tmp_val := tmp_val
   tmp_val2 = tmp_val + "/initiated.txt"
   tmp_val = string(data_sl)
@@ -1655,7 +1646,6 @@ func SyncRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("Final Ok")
   ////
   //SENDING COMMITS HISTORY
   mu.Lock()
@@ -1728,7 +1718,6 @@ func SyncRequestAdmin(conn net.Conn,
     return
   }
   ////
-  fmt.Println("Ok Final2")
   return
 }
 
