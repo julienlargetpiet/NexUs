@@ -859,7 +859,7 @@ func CommitRequestAdmin(conn net.Conn,
   var cur_valb string
   var cur_val2 string
   var is_valid bool
-  sign_buffr := make([]byte, 256)
+  sign_sl := make([]byte, 256)
   var cur_len = make([]byte, 1)
   //PROJECT VERIF
   err := conn.SetDeadline(time.Now().Add(1 * time.Second))
@@ -867,13 +867,13 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  _, err = conn.Read(sign_buffr)
+  _, err = conn.Read(sign_sl)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
     return
   }
-  sign_sl := sign_buffr[:]
+  //sign_sl := sign_buffr[:]
   err = conn.SetDeadline(time.Now().Add(1 * time.Second))
   if err != nil {
     conn.Close()
@@ -901,13 +901,13 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  _, err = conn.Read(sign_buffr)
+  _, err = conn.Read(sign_sl)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
     return
   }
-  sign_sl = sign_buffr[:]
+  //sign_sl = sign_buffr[:]
   data_buffr := make([]byte, cur_len[0])
   err = conn.SetDeadline(time.Now().Add(1 * time.Second))
   if err != nil {
@@ -1007,13 +1007,13 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  _, err = conn.Read(sign_buffr)
+  _, err = conn.Read(sign_sl)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
     return
   }
-  sign_sl = sign_buffr[:]
+  //sign_sl = sign_buffr[:]
   err = conn.SetDeadline(time.Now().Add(1 * time.Second))
   if err != nil {
     conn.Close()
@@ -1041,13 +1041,13 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  _, err = conn.Read(sign_buffr)
+  _, err = conn.Read(sign_sl)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
     return
   }
-  sign_sl = sign_buffr[:]
+  //sign_sl = sign_buffr[:]
   data_buffr = make([]byte, cur_len[0])
   err = conn.SetDeadline(time.Now().Add(1 * time.Second))
   if err != nil {
@@ -1118,13 +1118,13 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  _, err = conn.Read(sign_buffr)
+  _, err = conn.Read(sign_sl)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
     return
   }
-  sign_sl = sign_buffr[:]
+  //sign_sl = sign_buffr[:]
   err = conn.SetDeadline(time.Now().Add(1 * time.Second))
   if err != nil {
     conn.Close()
@@ -1153,13 +1153,13 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  _, err = conn.Read(sign_buffr)
+  _, err = conn.Read(sign_sl)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
     return
   }
-  sign_sl = sign_buffr[:]
+  //sign_sl = sign_buffr[:]
   err = conn.SetDeadline(time.Now().Add(1 * time.Second))
   if err != nil {
     conn.Close()
@@ -1189,13 +1189,13 @@ func CommitRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  _, err = conn.Read(sign_buffr)
+  _, err = conn.Read(sign_sl)
   if err != nil {
     CheckDeadLine(err)
     conn.Close()
     return
   }
-  sign_sl = sign_buffr[:]
+  //sign_sl = sign_buffr[:]
   err = conn.SetDeadline(time.Now().Add(1 * time.Second))
   if err != nil {
     conn.Close()
@@ -1304,13 +1304,13 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    _, err = conn.Read(sign_buffr)
+    _, err = conn.Read(sign_sl)
     if err != nil {
       CheckDeadLine(err)
       conn.Close()
       return
     }
-    sign_sl = sign_buffr[:]
+    //sign_sl = sign_buffr[:]
     err = conn.SetDeadline(time.Now().Add(1 * time.Second))
     if err != nil {
       conn.Close()
@@ -1322,7 +1322,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    sign_sl = sign_buffr[:]
+    //sign_sl = sign_buffr[:]
     data_sl = cur_len[:]
     hash_bffr = sha256.Sum256(data_sl)
     hash_sl = hash_bffr[:]
@@ -1340,13 +1340,13 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    _, err = conn.Read(sign_buffr)
+    _, err = conn.Read(sign_sl)
     if err != nil {
       CheckDeadLine(err)
       conn.Close()
       return
     }
-    sign_sl = sign_buffr[:]
+    //sign_sl = sign_buffr[:]
     err = conn.SetDeadline(time.Now().Add(1 * time.Second))
     if err != nil {
       conn.Close()
@@ -1358,7 +1358,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    sign_sl = sign_buffr[:]
+    //sign_sl = sign_buffr[:]
     data_sl = data_buffr[:]
     cur_name = string(data_sl)
     hash_bffr = sha256.Sum256(data_sl)
@@ -1376,13 +1376,13 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    _, err = conn.Read(sign_buffr)
+    _, err = conn.Read(sign_sl)
     if err != nil {
       CheckDeadLine(err)
       conn.Close()
       return
     }
-    sign_sl = sign_buffr[:]
+    //sign_sl = sign_buffr[:]
     err = conn.SetDeadline(time.Now().Add(1 * time.Second))
     if err != nil {
       conn.Close()
@@ -1394,7 +1394,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    sign_sl = sign_buffr[:]
+    //sign_sl = sign_buffr[:]
     data_sl = cur_len[:]
     hash_bffr = sha256.Sum256(data_sl)
     hash_sl = hash_bffr[:]
@@ -1412,13 +1412,13 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      _, err = conn.Read(sign_buffr)
+      _, err = conn.Read(sign_sl)
       if err != nil {
         CheckDeadLine(err)
         conn.Close()
         return
       }
-      sign_sl = sign_buffr[:]
+      //sign_sl = sign_buffr[:]
       err = conn.SetDeadline(time.Now().Add(1 * time.Second))
       if err != nil {
         conn.Close()
@@ -1430,7 +1430,7 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      sign_sl = sign_buffr[:]
+      //sign_sl = sign_buffr[:]
       data_sl = cur_len[:]
       hash_bffr = sha256.Sum256(data_sl)
       hash_sl = hash_bffr[:]
@@ -1448,13 +1448,13 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      _, err = conn.Read(sign_buffr)
+      _, err = conn.Read(sign_sl)
       if err != nil {
         CheckDeadLine(err)
         conn.Close()
         return
       }
-      sign_sl = sign_buffr[:]
+      //sign_sl = sign_buffr[:]
       err = conn.SetDeadline(time.Now().Add(1 * time.Second))
       if err != nil {
         conn.Close()
@@ -1466,7 +1466,7 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      sign_sl = sign_buffr[:]
+      //sign_sl = sign_buffr[:]
       data_sl = cur_len[:]
       hash_bffr = sha256.Sum256(final_cur_len)
       hash_sl = hash_bffr[:]
@@ -1485,13 +1485,13 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      _, err = conn.Read(sign_buffr)
+      _, err = conn.Read(sign_sl)
       if err != nil {
         CheckDeadLine(err)
         conn.Close()
         return
       }
-      sign_sl = sign_buffr[:]
+      //sign_sl = sign_buffr[:]
       err = conn.SetDeadline(time.Now().Add(1 * time.Second))
       if err != nil {
         conn.Close()
@@ -1503,7 +1503,7 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      sign_sl = sign_buffr[:]
+      //sign_sl = sign_buffr[:]
       data_sl = data_buffr[:]
       hash_bffr = sha256.Sum256(data_sl)
       hash_sl = hash_bffr[:]
