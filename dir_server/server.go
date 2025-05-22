@@ -106,7 +106,9 @@ func RunServer(admin_pub_key *rsa.PublicKey,
                signb *[]byte,
                ref_rtn_data2 *[]byte,
                sign2 *[]byte,
-               sign2b *[]byte) error {
+               sign2b *[]byte,
+               admin_private_key *rsa.PrivateKey,
+               standard_private_key *rsa.PrivateKey) error {
   ln, err := net.Listen("tcp", "0.0.0.0:8079")
   defer ln.Close()
   if err != nil {
@@ -125,7 +127,9 @@ func RunServer(admin_pub_key *rsa.PublicKey,
                       signb,
                       ref_rtn_data2,
                       sign2,
-                      sign2b)
+                      sign2b,
+                      admin_private_key,
+                      standard_private_key)
   }
 }
 
@@ -145,7 +149,9 @@ func ReceiveRequest(conn net.Conn,
                  signb *[]byte,
                  ref_rtn_data2 *[]byte,
                  sign2 *[]byte,
-                 sign2b *[]byte) {
+                 sign2b *[]byte,
+                 admin_private_key *rsa.PrivateKey,
+                 standard_private_key *rsa.PrivateKey) {
   var n = make([]byte, 1)
   var n_sl []byte
   var err error
@@ -201,7 +207,8 @@ func ReceiveRequest(conn net.Conn,
          return
        } else {
          SyncRequestStandard(conn, 
-           standard_pub_key)
+           standard_pub_key,
+           standard_private_key)
          return
        }
     }
@@ -215,7 +222,8 @@ func ReceiveRequest(conn net.Conn,
       return
     } else {
       SyncRequestAdmin(conn, 
-                    admin_pub_key)
+                    admin_pub_key,
+                    admin_private_key)
       return
     }
   }
@@ -1506,7 +1514,8 @@ func CommitRequestAdmin(conn net.Conn,
 }
 
 func SyncRequestStandard(conn net.Conn, 
-                 standard_pub_key *rsa.PublicKey) {
+                 standard_pub_key *rsa.PublicKey,
+                 standard_private_key *rsa.PrivateKey) {
   fmt.Println("Standard")
   return
   //var sign_sl []byte
@@ -1514,13 +1523,15 @@ func SyncRequestStandard(conn net.Conn,
 }
 
 func SyncRequestAdmin(conn net.Conn, 
-                 admin_pub_key *rsa.PublicKey) {
+                 admin_pub_key *rsa.PublicKey,
+                 admin_private_key *rsa.PrivateKey) {
   fmt.Println("Admin")
   var data_sl []byte
   var cur_len = make([]byte, 1)
   var sign_sl = make([]byte, 256)
   var hash_buffr [32]byte
   var hash_sl []byte
+  //PROJECT VERIF
   err := conn.SetDeadline(time.Now().Add(1 * time.Second))
   if err != nil {
     conn.Close()
@@ -1547,6 +1558,7 @@ func SyncRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  fmt.Println("ok")
   data_sl = make([]byte, cur_len[0])
   fmt.Println(data_sl)
   _, err = conn.Read(sign_sl)
@@ -1559,7 +1571,7 @@ func SyncRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  hash_buffr = sha256.Sum256(cur_len)
+  hash_buffr = sha256.Sum256(data_sl)
   hash_sl = hash_buffr[:]
   err = rsa.VerifyPKCS1v15(admin_pub_key,
                            crypto.SHA256,
@@ -1584,6 +1596,139 @@ func SyncRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  ////
+  //BRANCH VERIF
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(cur_len)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  fmt.Println("suite")
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  data_sl = make([]byte, cur_len[0])
+  _, err = conn.Read(data_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(data_sl)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  fmt.Println("suite2")
+  ref_tmp_val := tmp_val
+  tmp_val2 = tmp_val + "/initiated.txt"
+  tmp_val = string(data_sl)
+  is_valid, err = ExistDirFile(&tmp_val, &tmp_val2)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  if !is_valid {
+    conn.Close()
+    return
+  }
+  fmt.Println("Final Ok")
+  ////
+  //SENDING COMMITS HISTORY
+  mu.Lock()
+  data, err := os.ReadFile(ref_tmp_val + "/" + tmp_val + "/commits.txt")
+  if err != nil {
+    conn.Close()
+    return
+  }
+  mu.Unlock()
+  final_cur_len := IntToByteSlice(len(data))
+  cur_len = []byte{byte(len(final_cur_len))}
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  sign, err := rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign)
+  if err != nil {
+    conn.Close()
+    return
+  }
+   _, err = conn.Write(cur_len)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(final_cur_len)
+  hash_sl = hash_buffr[:]
+  sign, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign)
+  if err != nil {
+    conn.Close()
+    return
+  }
+   _, err = conn.Write(final_cur_len)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(data)
+  hash_sl = hash_buffr[:]
+  sign, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign)
+  if err != nil {
+    conn.Close()
+    return
+  }
+   _, err = conn.Write(data)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  ////
+  fmt.Println("Ok Final2")
   return
 }
 
@@ -1709,7 +1854,9 @@ func main () {
                   &signb,
                   &ref_data2,
                   &sign2,
-                  &sign2b)
+                  &sign2b,
+                  admin_private_key,
+                  standard_private_key)
   if err != nil {
     fmt.Println("Error:", err)
     return
