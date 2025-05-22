@@ -150,7 +150,6 @@ func ReceiveRequest(conn net.Conn,
   var n_sl []byte
   var err error
   var sign_rcv = make([]byte, 256)
-  var sign_rcv_sl []byte
   var hash_buffr [32]byte
   var hash_sl []byte
   err = conn.SetDeadline(time.Now().Add(1 * time.Second))
@@ -169,7 +168,6 @@ func ReceiveRequest(conn net.Conn,
     conn.Close()
     return
   }
-  sign_rcv_sl = sign_rcv[:]
   _, err = conn.Read(n)
   n_sl = n[:]
   if err != nil {
@@ -181,12 +179,12 @@ func ReceiveRequest(conn net.Conn,
     err = rsa.VerifyPKCS1v15(admin_pub_key,
                           crypto.SHA256, 
                           hash_sl, 
-                          sign_rcv_sl)
+                          sign_rcv)
     if err != nil {
        err = rsa.VerifyPKCS1v15(standard_pub_key,
                           crypto.SHA256, 
                           hash_sl, 
-                          sign_rcv_sl)
+                          sign_rcv)
        if err != nil {
          CheckDeadLine(err)
          conn.Close()
@@ -1548,8 +1546,41 @@ func SyncRequestStandard(conn net.Conn,
 
 func SyncRequestAdmin(conn net.Conn, 
                  admin_pub_key *rsa.PublicKey) {
-  //var sign_sl []byte
-  //var data_sl []byte
+  fmt.Println("Icii")
+  var data_sl []byte
+  var cur_len = make([]byte, 1)
+  var sign_sl = make([]byte, 256)
+  var hash_buffr [32]byte
+  var hash_sl []byte
+  err := conn.SetDeadline(time.Now().Add(1 * time.Second))
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(cur_len)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  data_sl = make([]byte, cur_len[0])
+  fmt.Println(data_sl)
+  return
 }
 
 func main () {
