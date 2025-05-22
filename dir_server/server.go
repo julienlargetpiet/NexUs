@@ -191,15 +191,18 @@ func ReceiveRequest(conn net.Conn,
          return
        }
        if n[0] == 0 {
+         fmt.Println("Standard commit")
          CommitRequestStandard(conn, 
                     standard_pub_key,
                     ref_rtn_data,
                     sign,
                     ref_rtn_data2,
                     sign2)
+         return
        } else {
          SyncRequestStandard(conn, 
            standard_pub_key)
+         return
        }
     }
     if n[0] == 0 {
@@ -209,9 +212,11 @@ func ReceiveRequest(conn net.Conn,
                     signb,
                     ref_rtn_data2,
                     sign2b)
+      return
     } else {
       SyncRequestAdmin(conn, 
                     admin_pub_key)
+      return
     }
   }
   return
@@ -1502,13 +1507,15 @@ func CommitRequestAdmin(conn net.Conn,
 
 func SyncRequestStandard(conn net.Conn, 
                  standard_pub_key *rsa.PublicKey) {
+  fmt.Println("Standard")
+  return
   //var sign_sl []byte
   //var data_sl []byte
 }
 
 func SyncRequestAdmin(conn net.Conn, 
                  admin_pub_key *rsa.PublicKey) {
-  fmt.Println("Icii")
+  fmt.Println("Admin")
   var data_sl []byte
   var cur_len = make([]byte, 1)
   var sign_sl = make([]byte, 256)
@@ -1542,6 +1549,41 @@ func SyncRequestAdmin(conn net.Conn,
   }
   data_sl = make([]byte, cur_len[0])
   fmt.Println(data_sl)
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(data_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  tmp_val := string(data_sl)
+  fmt.Println(tmp_val)
+  tmp_val2 := "initiated.txt"
+  is_valid, err := ExistDirFile(&tmp_val, &tmp_val2)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  fmt.Println(is_valid)
+  if !is_valid {
+    conn.Close()
+    return
+  }
   return
 }
 
