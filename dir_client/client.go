@@ -1032,7 +1032,10 @@ func main() {
     fmt.Println("'sasdiff x file' will print the content diff between your current added file in sas stage, and the commit number provided")
     fmt.Println("Example: nexus sasdiff 18 b.txt\n")
     fmt.Println("'sasstructdiff x' prints the filestructure diff between a chosen commit number and the the current sas filestructure")
-    fmt.Println("Error: nexus sasstructdiff 18 ,will prints the filestructure diff between your current sas filestructure and the 19th commit")
+    fmt.Println("Example: nexus sasstructdiff 18 ,will prints the filestructure diff between your current sas filestructure and the 19th commit\n")
+    fmt.Println("'send' sends the content of your last commit to the server")
+    fmt.Println("Example: nexus send ,will send the content of your last commit to the server\n")
+    fmt.Println("'sync' will sync your commits with the server commit for the same branch on the same project, this won't download the content of the non synchronized commit like explained in the README.md but will sync the commits.txt file\n")
     return
   }
 
@@ -3627,26 +3630,23 @@ func main() {
       fmt.Println("Error:", err)
       return
     }
-    err = os.WriteFile(cur_val2 + "/is_pushed.txt", 
-                       []byte("1"), 
-                       0644)
-    if err != nil {
-      fmt.Println("Error:", err)
-      return
-    }
     ////
     return
   }
 
+  //if frst_arg == "waitingget" {
+  //  
+  //}
+
   //if frst_arg == "get" {
+  //  
+  //}
+
+  //if frst_arg == "getwaitingbranch" {
 
   //}
 
-  //if frst_arg == "getpubbranch" {
-
-  //}
-
-  //if frst_arg == "getallbranch" {
+  //if frst_arg == "getbranch" {
 
   //}
 
