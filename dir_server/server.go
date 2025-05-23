@@ -1697,8 +1697,8 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    data_sl = cur_len[:]
-    hash_bffr = sha256.Sum256(data_sl)
+    //data_sl = cur_len[:]
+    hash_bffr = sha256.Sum256(cur_len)
     hash_sl = hash_bffr[:]
     err = rsa.VerifyPKCS1v15(admin_pub_key,
                             crypto.SHA256, 
@@ -1708,7 +1708,7 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    data_buffr = make([]byte, cur_len[0])
+    data_sl = make([]byte, cur_len[0])
     err = conn.SetDeadline(time.Now().Add(1 * time.Second))
     if err != nil {
       conn.Close()
@@ -1725,13 +1725,13 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    _, err = conn.Read(data_buffr)
+    _, err = conn.Read(data_sl)
     if err != nil {
       CheckDeadLine(err)
       conn.Close()
       return
     }
-    data_sl = data_buffr[:]
+    //data_sl = data_buffr[:]
     cur_name = string(data_sl)
     hash_bffr = sha256.Sum256(data_sl)
     hash_sl = hash_bffr[:]
@@ -1765,8 +1765,8 @@ func CommitRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    data_sl = cur_len[:]
-    hash_bffr = sha256.Sum256(data_sl)
+    //data_sl = cur_len[:]
+    hash_bffr = sha256.Sum256(cur_len)
     hash_sl = hash_bffr[:]
     err = rsa.VerifyPKCS1v15(admin_pub_key,
                             crypto.SHA256, 
@@ -1799,8 +1799,8 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      data_sl = cur_len[:]
-      hash_bffr = sha256.Sum256(data_sl)
+      //data_sl = cur_len[:]
+      hash_bffr = sha256.Sum256(cur_len)
       hash_sl = hash_bffr[:]
       err = rsa.VerifyPKCS1v15(admin_pub_key,
                               crypto.SHA256, 
@@ -1833,7 +1833,7 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      data_sl = cur_len[:]
+      //data_sl = cur_len[:]
       hash_bffr = sha256.Sum256(final_cur_len)
       hash_sl = hash_bffr[:]
       err = rsa.VerifyPKCS1v15(admin_pub_key,
@@ -1845,7 +1845,7 @@ func CommitRequestAdmin(conn net.Conn,
         return
       } 
       target_len = ByteSliceToInt(final_cur_len)
-      data_buffr = make([]byte, target_len)
+      data_sl = make([]byte, target_len)
       err = conn.SetDeadline(time.Now().Add(1 * time.Second))
       if err != nil {
         conn.Close()
@@ -1862,13 +1862,13 @@ func CommitRequestAdmin(conn net.Conn,
         conn.Close()
         return
       }
-      _, err = conn.Read(data_buffr)
+      _, err = conn.Read(data_sl)
       if err != nil {
         CheckDeadLine(err)
         conn.Close()
         return
       }
-      data_sl = data_buffr[:]
+      //data_sl = data_buffr[:]
       hash_bffr = sha256.Sum256(data_sl)
       hash_sl = hash_bffr[:]
       err = rsa.VerifyPKCS1v15(admin_pub_key,
