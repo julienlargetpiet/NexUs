@@ -12,9 +12,240 @@ import (
   "net"
   "time"
   "sync"
+  "path/filepath"
 )
 
 var mu sync.RWMutex
+
+func TreeSend(conn *net.Conn, 
+              src string, 
+              private_key *rsa.PrivateKey) (error) {
+  base_dir, err := filepath.Abs(".")
+  if err != nil {
+    return err
+  }
+  var len_base_dir int = len(base_dir)
+  var cur_path string
+  var cur_path_found string
+  var cur_path_found2 string
+  var vec_dirname = []string{src}
+  var n int = 0
+  var file_val = []byte{0}
+  var dir_val = []byte{1}
+  var end_val = []byte{2}
+  var cur_send []byte
+  var cur_send_len []byte
+  var hash_buffr [32]byte
+  var hash_sl []byte
+  var sign_sl []byte
+  var final_cur_send_len []byte
+  var i int
+  for n > -1 {
+    cur_path = vec_dirname[n]
+    entries, err := os.ReadDir(cur_path)
+    if err != nil {
+      return err
+    }
+    for _, v := range entries {
+      cur_path_found = cur_path + "/" + v.Name()
+      cur_path_found2 = ""
+      for i = len_base_dir; i < len(cur_path_found); i++ {
+        cur_path_found2 += string(cur_path_found[i])
+      }
+      cur_send = []byte(cur_path_found2)
+      cur_send_len = []byte{byte(len(cur_send))}
+      hash_buffr = sha256.Sum256(cur_send_len)
+      hash_sl = hash_buffr[:]
+      sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                 private_key, 
+                                 crypto.SHA256,
+                                 hash_sl)
+      if err != nil {
+        return err
+      }
+      _, err = (*conn).Write(sign_sl)
+      if err != nil {
+        return err
+      }
+      _, err = (*conn).Write(cur_send_len)
+      if err != nil {
+        return err
+      }
+      hash_buffr = sha256.Sum256(cur_send)
+      hash_sl = hash_buffr[:]
+      sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                 private_key, 
+                                 crypto.SHA256,
+                                 hash_sl)
+      if err != nil {
+        return err
+      }
+      _, err = (*conn).Write(sign_sl)
+      if err != nil {
+        return err
+      }
+      _, err = (*conn).Write(cur_send)
+      if err != nil {
+        return err
+      }
+      if v.IsDir() {
+        vec_dirname = append([]string{cur_path_found}, vec_dirname...)
+        hash_buffr = sha256.Sum256(dir_val)
+        hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
+        _, err = (*conn).Write(sign_sl)
+        if err != nil {
+          return err
+        }
+        _, err = (*conn).Write(dir_val)
+        if err != nil {
+          return err
+        }
+        n += 1
+      } else {
+        hash_buffr = sha256.Sum256(file_val)
+        hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
+        _, err = (*conn).Write(sign_sl)
+        if err != nil {
+          return err
+        }
+        _, err = (*conn).Write(file_val)
+        if err != nil {
+          return err
+        }
+        mu.RLock()
+        cur_send, err = os.ReadFile(cur_path_found)
+        if err != nil {
+          return err
+        }
+        mu.RUnlock()
+        final_cur_send_len = IntToByteSlice(len(cur_send))
+        cur_send_len = []byte{byte(len(final_cur_send_len))}
+        hash_buffr = sha256.Sum256(cur_send_len)
+        hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
+        _, err = (*conn).Write(sign_sl)
+        if err != nil {
+          return err
+        }
+        _, err = (*conn).Write(cur_send_len)
+        if err != nil {
+          return err
+        }
+        hash_buffr = sha256.Sum256(final_cur_send_len)
+        hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
+        _, err = (*conn).Write(sign_sl)
+        if err != nil {
+          return err
+        }
+        _, err = (*conn).Write(final_cur_send_len)
+        if err != nil {
+          return err
+        }
+        hash_buffr = sha256.Sum256(cur_send)
+        hash_sl = hash_buffr[:]
+        sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                                   private_key, 
+                                   crypto.SHA256,
+                                   hash_sl)
+        if err != nil {
+          return err
+        }
+        _, err = (*conn).Write(sign_sl)
+        if err != nil {
+          return err
+        }
+        _, err = (*conn).Write(cur_send)
+        if err != nil {
+          return err
+        } 
+      }
+    }
+    vec_dirname = vec_dirname[:len(vec_dirname) - 1]
+    n -= 1
+  }
+  cur_path_found = cur_path + "/" + "END"
+  cur_send = []byte(cur_path_found)
+  cur_send_len = []byte{byte(len(cur_send))}
+  hash_buffr = sha256.Sum256(cur_send_len)
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                             private_key, 
+                             crypto.SHA256,
+                             hash_sl)
+  if err != nil {
+    return err
+  }
+  _, err = (*conn).Write(sign_sl)
+  if err != nil {
+    return err
+  }
+  _, err = (*conn).Write(cur_send_len)
+  if err != nil {
+    return err
+  }
+  hash_buffr = sha256.Sum256(cur_send)
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                             private_key, 
+                             crypto.SHA256,
+                             hash_sl)
+  if err != nil {
+    return err
+  }
+  _, err = (*conn).Write(sign_sl)
+  if err != nil {
+    return err
+  }
+  _, err = (*conn).Write(cur_send)
+  if err != nil {
+    return err
+  }
+  hash_buffr = sha256.Sum256(end_val)
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader, 
+                             private_key, 
+                             crypto.SHA256,
+                             hash_sl)
+  if err != nil {
+    return err
+  }
+  _, err = (*conn).Write(sign_sl)
+  if err != nil {
+    return err
+  }
+  _, err = (*conn).Write(end_val)
+  if err != nil {
+    return err
+  } 
+  return nil
+}
 
 func IntToByteSlice(x int) []byte {
   if x == 256 {
@@ -204,10 +435,15 @@ func ReceiveRequest(conn net.Conn,
                     ref_rtn_data2,
                     sign2)
          return
-       } else {
+       } else if n[0] == 1 {
          SyncRequestStandard(conn, 
            standard_pub_key,
            standard_private_key)
+         return
+       } else if n[0] == 2 {
+         GetRequestStandard(conn, 
+                            standard_pub_key, 
+                            standard_private_key)
          return
        }
     }
@@ -219,13 +455,167 @@ func ReceiveRequest(conn net.Conn,
                     ref_rtn_data2,
                     sign2b)
       return
-    } else {
+    } else if n[0] == 1 {
       SyncRequestAdmin(conn, 
                     admin_pub_key,
                     admin_private_key)
       return
+    } else if n[0] == 2 {
+      GetRequestAdmin(conn, 
+                      admin_pub_key, 
+                      admin_private_key)
+      return
     }
   }
+  return
+}
+
+func GetRequestStandard(conn net.Conn, 
+                   standard_pub_key *rsa.PublicKey,
+                   standard_private_key *rsa.PrivateKey) {
+  return
+}
+
+func GetRequestAdmin(conn net.Conn,
+                   admin_pub_key *rsa.PublicKey,
+                   admin_private_key *rsa.PrivateKey) {
+  var cur_len = make([]byte, 1)
+  var data_sl []byte
+  var hash_sl []byte
+  var sign_sl = make([]byte, 256)
+  //PROJECT VERIF
+  _, err := conn.Read(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(cur_len)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  hash_buffr := sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  data_sl = make([]byte, cur_len[0])
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(data_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(data_sl)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  tmp_val := string(data_sl)
+  tmp_val2 := "initiated.txt"
+  is_valid, err := ExistDirFile(&tmp_val, &tmp_val2)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  if !is_valid {
+    fmt.Println("Repo does not exist")
+    conn.Close()
+    return
+  }
+  ////
+  //BRANCH VERIF
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(cur_len)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                            crypto.SHA256,
+                            hash_sl,
+                            sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  data_sl = make([]byte, cur_len[0])
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(data_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(data_sl)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                            crypto.SHA256,
+                            hash_sl,
+                            sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  my_src := tmp_val
+  tmp_val = string(data_sl)
+  my_src += ("/" + tmp_val)
+  tmp_val2 += "/initiated.txt"
+  is_valid, err = ExistDirFile(&tmp_val, &tmp_val2)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  if !is_valid {
+    fmt.Println("Branch does not exist")
+    conn.Close()
+    return
+  }
+  ////
+  //SENDING BRANCH PROJECT DATA
+  err = TreeSend(&conn, my_src, admin_private_key)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  //
   return
 }
 
