@@ -473,6 +473,7 @@ func ReceiveRequest(conn net.Conn,
 func GetRequestStandard(conn net.Conn, 
                    standard_pub_key *rsa.PublicKey,
                    standard_private_key *rsa.PrivateKey) {
+  fmt.Println("Standard")
   return
 }
 
@@ -496,6 +497,7 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  fmt.Println("cur_len:", cur_len)
   hash_buffr := sha256.Sum256(cur_len)
   hash_sl = hash_buffr[:]
   err = rsa.VerifyPKCS1v15(admin_pub_key,
@@ -539,6 +541,7 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  fmt.Println("tmp_val:", tmp_val)
   if !is_valid {
     fmt.Println("Repo does not exist")
     conn.Close()
@@ -593,10 +596,10 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  tmp_val2 = tmp_val + "/initiated.txt"
   my_src := tmp_val
   tmp_val = string(data_sl)
   my_src += ("/" + tmp_val)
-  tmp_val2 += "/initiated.txt"
   is_valid, err = ExistDirFile(&tmp_val, &tmp_val2)
   if err != nil {
     fmt.Println("Error:", err)
@@ -608,14 +611,349 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  fmt.Println("my_src:", my_src)
   ////
-  //SENDING BRANCH PROJECT DATA
-  err = TreeSend(&conn, my_src, admin_private_key)
+  //RECEIVE DEPTH
+  _, err = conn.Read(sign_sl)
   if err != nil {
     conn.Close()
     return
   }
-  //
+  _, err = conn.Read(cur_len)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                           crypto.SHA256,
+                           hash_sl,
+                           sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  fmt.Println("cur_len:", cur_len)
+  data_sl = make([]byte, cur_len[0])
+  _, err = conn.Read(sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  _, err = conn.Read(data_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(data_sl)
+  hash_sl = hash_buffr[:]
+  err = rsa.VerifyPKCS1v15(admin_pub_key,
+                          crypto.SHA256,
+                          hash_sl,
+                          sign_sl)
+  if err != nil {
+    conn.Close()
+    return
+  }
+  fmt.Println("data_sl:", data_sl)
+  target_len := ByteSliceToInt(data_sl)
+  data_sl, err = os.ReadFile(my_src + "/commits.txt")
+  if err != nil {
+    conn.Close()
+    return
+  }
+  var my_vec []string
+  var tmp_vec = make([]byte, 64)
+  var cur_commit string = ""
+  var i int = len(data_sl) - 2
+  var i2 int = 0
+  var i3 int = 63
+  for i > -1 {
+    if data_sl[i] != 10 {
+      tmp_vec[i3] = data_sl[i]
+    } else {
+      fmt.Println("WTF", data_sl[0])
+      cur_commit = string(tmp_vec)
+      my_vec = append(my_vec, cur_commit)
+      tmp_vec = make([]byte, 64)
+      i2 += 1
+      if i2 == target_len {
+        break
+      }
+      i3 = 64
+    }
+    i3--
+    i--
+  }
+  if i == -1 {
+    cur_commit = string(tmp_vec)
+    my_vec = append(my_vec, cur_commit)
+  }
+  fmt.Println("my_vec:", my_vec, len(my_vec[0]))
+  fmt.Println(my_vec[0])
+  ////
+  //SENDING PREP FILES
+  var final_cur_len []byte
+  data_sl, err = os.ReadFile(my_src + "/commits.txt")
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  final_cur_len = IntToByteSlice(len(data_sl))
+  cur_len = []byte{byte(len(final_cur_len))}
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(cur_len)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(final_cur_len)
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(final_cur_len)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(data_sl)
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(data_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  data_sl, err = os.ReadFile(my_src + "/addorder.txt")
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  final_cur_len = IntToByteSlice(len(data_sl))
+  cur_len = []byte{byte(len(final_cur_len))}
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(cur_len)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(final_cur_len)
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(final_cur_len)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  hash_buffr = sha256.Sum256(data_sl)
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(data_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  ////
+  //SENDING ACTUAL DATA
+  for _, cur_commit := range my_vec {
+    cur_len = []byte{1}
+    hash_buffr = sha256.Sum256(cur_len)
+    hash_sl = hash_buffr[:]
+    sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    data_sl = []byte(cur_commit)
+    cur_len = []byte{byte(len(data_sl))}
+    hash_buffr = sha256.Sum256(cur_len)
+    hash_sl = hash_buffr[:]
+    sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    hash_buffr = sha256.Sum256(data_sl)
+    hash_sl = hash_buffr[:]
+    sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               admin_private_key,
+                               crypto.SHA256,
+                               hash_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(data_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    err = TreeSend(&conn, my_src + "/" + cur_commit, admin_private_key)
+    if err != nil {
+      conn.Close()
+      return
+    }
+  }
+  cur_len = []byte{0}
+  hash_buffr = sha256.Sum256(cur_len)
+  hash_sl = hash_buffr[:]
+  sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                             admin_private_key,
+                             crypto.SHA256,
+                             hash_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(cur_len)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
   return
 }
 
