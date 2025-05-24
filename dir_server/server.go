@@ -486,8 +486,8 @@ func GetRequestStandard(conn net.Conn,
 }
 
 func GetRequestAdmin(conn net.Conn,
-                   admin_pub_key *rsa.PublicKey,
-                   admin_private_key *rsa.PrivateKey) {
+                   pub_key *rsa.PublicKey,
+                   private_key *rsa.PrivateKey) {
   var cur_len = make([]byte, 1)
   var data_sl []byte
   var hash_sl []byte
@@ -508,7 +508,7 @@ func GetRequestAdmin(conn net.Conn,
   fmt.Println("cur_len:", cur_len)
   hash_buffr := sha256.Sum256(cur_len)
   hash_sl = hash_buffr[:]
-  err = rsa.VerifyPKCS1v15(admin_pub_key,
+  err = rsa.VerifyPKCS1v15(pub_key,
                            crypto.SHA256,
                            hash_sl,
                            sign_sl)
@@ -532,7 +532,7 @@ func GetRequestAdmin(conn net.Conn,
   }
   hash_buffr = sha256.Sum256(data_sl)
   hash_sl = hash_buffr[:]
-  err = rsa.VerifyPKCS1v15(admin_pub_key,
+  err = rsa.VerifyPKCS1v15(pub_key,
                            crypto.SHA256,
                            hash_sl,
                            sign_sl)
@@ -571,7 +571,7 @@ func GetRequestAdmin(conn net.Conn,
   }
   hash_buffr = sha256.Sum256(cur_len)
   hash_sl = hash_buffr[:]
-  err = rsa.VerifyPKCS1v15(admin_pub_key,
+  err = rsa.VerifyPKCS1v15(pub_key,
                             crypto.SHA256,
                             hash_sl,
                             sign_sl)
@@ -595,7 +595,7 @@ func GetRequestAdmin(conn net.Conn,
   }
   hash_buffr = sha256.Sum256(data_sl)
   hash_sl = hash_buffr[:]
-  err = rsa.VerifyPKCS1v15(admin_pub_key,
+  err = rsa.VerifyPKCS1v15(pub_key,
                             crypto.SHA256,
                             hash_sl,
                             sign_sl)
@@ -634,7 +634,7 @@ func GetRequestAdmin(conn net.Conn,
   }
   hash_buffr = sha256.Sum256(cur_len)
   hash_sl = hash_buffr[:]
-  err = rsa.VerifyPKCS1v15(admin_pub_key,
+  err = rsa.VerifyPKCS1v15(pub_key,
                            crypto.SHA256,
                            hash_sl,
                            sign_sl)
@@ -656,7 +656,7 @@ func GetRequestAdmin(conn net.Conn,
   }
   hash_buffr = sha256.Sum256(data_sl)
   hash_sl = hash_buffr[:]
-  err = rsa.VerifyPKCS1v15(admin_pub_key,
+  err = rsa.VerifyPKCS1v15(pub_key,
                           crypto.SHA256,
                           hash_sl,
                           sign_sl)
@@ -714,7 +714,7 @@ func GetRequestAdmin(conn net.Conn,
   hash_buffr = sha256.Sum256(cur_len)
   hash_sl = hash_buffr[:]
   sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
-                               admin_private_key,
+                               private_key,
                                crypto.SHA256,
                                hash_sl)
   if err != nil {
@@ -737,7 +737,7 @@ func GetRequestAdmin(conn net.Conn,
   hash_buffr = sha256.Sum256(final_cur_len)
   hash_sl = hash_buffr[:]
   sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
-                               admin_private_key,
+                               private_key,
                                crypto.SHA256,
                                hash_sl)
   if err != nil {
@@ -760,7 +760,7 @@ func GetRequestAdmin(conn net.Conn,
   hash_buffr = sha256.Sum256(data_sl)
   hash_sl = hash_buffr[:]
   sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
-                               admin_private_key,
+                               private_key,
                                crypto.SHA256,
                                hash_sl)
   if err != nil {
@@ -787,7 +787,7 @@ func GetRequestAdmin(conn net.Conn,
     hash_buffr = sha256.Sum256(cur_len)
     hash_sl = hash_buffr[:]
     sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
-                               admin_private_key,
+                               private_key,
                                crypto.SHA256,
                                hash_sl)
     if err != nil {
@@ -812,7 +812,7 @@ func GetRequestAdmin(conn net.Conn,
     hash_buffr = sha256.Sum256(cur_len)
     hash_sl = hash_buffr[:]
     sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
-                               admin_private_key,
+                               private_key,
                                crypto.SHA256,
                                hash_sl)
     if err != nil {
@@ -835,7 +835,7 @@ func GetRequestAdmin(conn net.Conn,
     hash_buffr = sha256.Sum256(data_sl)
     hash_sl = hash_buffr[:]
     sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
-                               admin_private_key,
+                               private_key,
                                crypto.SHA256,
                                hash_sl)
     if err != nil {
@@ -856,7 +856,7 @@ func GetRequestAdmin(conn net.Conn,
       return
     }
     fmt.Println("ici:", my_src + "/data/" + cur_commit)
-    err = TreeSend(&conn, my_src + "/data/" + cur_commit, admin_private_key)
+    err = TreeSend(&conn, my_src + "/data/" + cur_commit, private_key)
     if err != nil {
       conn.Close()
       return
@@ -866,7 +866,7 @@ func GetRequestAdmin(conn net.Conn,
   hash_buffr = sha256.Sum256(cur_len)
   hash_sl = hash_buffr[:]
   sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
-                             admin_private_key,
+                             private_key,
                              crypto.SHA256,
                              hash_sl)
   if err != nil {
