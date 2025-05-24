@@ -3929,7 +3929,7 @@ func main() {
       return
     }
     err = os.WriteFile(base_dir + cur_project + "/cur_branch.txt", 
-                       []byte(cur_branch + "\n"),
+                       []byte(cur_branch),
                        0644)
     if err != nil {
       fmt.Println("Error:", err)
@@ -4059,84 +4059,6 @@ func main() {
       conn.Close()
       return
     }
-    _, err = conn.Read(sign_sl)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    _, err = conn.Read(cur_len)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    hash_buffr = sha256.Sum256(cur_len)
-    hash_sl = hash_buffr[:]
-    err = rsa.VerifyPKCS1v15(pub_key,
-                             crypto.SHA256,
-                             hash_sl,
-                             sign_sl)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    final_cur_len = make([]byte, cur_len[0])
-    _, err = conn.Read(sign_sl)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    _, err = conn.Read(final_cur_len)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    hash_buffr = sha256.Sum256(final_cur_len)
-    hash_sl = hash_buffr[:]
-    err = rsa.VerifyPKCS1v15(pub_key,
-                             crypto.SHA256,
-                             hash_sl,
-                             sign_sl)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    target_len = ByteSliceToInt(final_cur_len)
-    data = make([]byte, target_len)
-    _, err = conn.Read(sign_sl)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    _, err = conn.Read(data)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    hash_buffr = sha256.Sum256(data)
-    hash_sl = hash_buffr[:]
-    err = rsa.VerifyPKCS1v15(pub_key,
-                             crypto.SHA256,
-                             hash_sl,
-                             sign_sl)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    err = os.WriteFile(base_dir + cur_project + "/" + cur_branch + "/addorder.txt", data, 0644)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
     ////
     //RECEIVE COMMIT DATA
     var cur_name string
@@ -4206,13 +4128,14 @@ func main() {
         conn.Close()
         return
       }
-      cur_path = base_dir + cur_project + "/" + cur_branch + "/" + string(data)
+      cur_path = base_dir + cur_project + "/" + cur_branch + "/data/" + string(data)
       err = os.Mkdir(cur_path, 0755)
       if err != nil {
         conn.Close()
         return
       }
       for {
+        fmt.Println("loop")
         _, err = conn.Read(sign_sl)
         if err != nil {
           conn.Close()
@@ -4355,15 +4278,55 @@ func main() {
         }
       }
     }
+    conn.Close()
     ////
     return
   }
+  
+  if frst_arg == "bring" {
+    if n < 3 {
+      fmt.Println("Error: the project name should been provided")
+      return
+    }
+    cur_project := base_dir + os.Args[2]
+    data, err = os.ReadFile(cur_project + "/cur_branch.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    cur_project += ("/" + string(data))
+    data, err = os.ReadFile(cur_project + "/commits.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    i = len(data) - 2
+    i2 = 63
+    tmp_val := make([]byte, 64)
+    for i > -1 && data[i] != 10 {
+      tmp_val[i2] = data[i]
+      i2 -= 1
+      i -= 1
+    }
+    cur_project += ("/data/" + string(tmp_val) + "/data")
+    fmt.Println("cur_project:", cur_project)
+    err = deCompressCopyDir(&cur_project, &cur_dir)
+    if err != nil {
+      fmt.Println("Error:", err) 
+      return
+    }
+    return
+  }
 
-  //if frst_arg == "getwaitingbranch" {
+  //if frst_arg == "seewaitingbranch" {
 
   //}
 
-  //if frst_arg == "getbranch" {
+  //if frst_arg == "seebranch" {
+
+  //}
+
+  //if frst_arg == "seeproject" {
 
   //}
 
