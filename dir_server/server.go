@@ -12,7 +12,6 @@ import (
   "net"
   "time"
   "sync"
-  "path/filepath"
 )
 
 var mu sync.RWMutex
@@ -20,11 +19,8 @@ var mu sync.RWMutex
 func TreeSend(conn *net.Conn, 
               src string, 
               private_key *rsa.PrivateKey) (error) {
-  base_dir, err := filepath.Abs(".")
-  if err != nil {
-    return err
-  }
-  var len_base_dir int = len(base_dir)
+  var len_base_dir int = len(src)
+  var err error
   var cur_path string
   var cur_path_found string
   var cur_path_found2 string
@@ -42,6 +38,7 @@ func TreeSend(conn *net.Conn,
   var i int
   for n > -1 {
     cur_path = vec_dirname[n]
+    fmt.Println("cur_path:", cur_path)
     entries, err := os.ReadDir(cur_path)
     if err != nil {
       return err
@@ -52,6 +49,7 @@ func TreeSend(conn *net.Conn,
       for i = len_base_dir; i < len(cur_path_found); i++ {
         cur_path_found2 += string(cur_path_found[i])
       }
+      fmt.Println("cur_path2:", cur_path_found2)
       cur_send = []byte(cur_path_found2)
       cur_send_len = []byte{byte(len(cur_send))}
       hash_buffr = sha256.Sum256(cur_send_len)
@@ -772,83 +770,6 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  data_sl, err = os.ReadFile(my_src + "/addorder.txt")
-  if err != nil {
-    fmt.Println("Error:", err)
-    conn.Close()
-    return
-  }
-  final_cur_len = IntToByteSlice(len(data_sl))
-  cur_len = []byte{byte(len(final_cur_len))}
-  hash_buffr = sha256.Sum256(cur_len)
-  hash_sl = hash_buffr[:]
-  sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
-                               admin_private_key,
-                               crypto.SHA256,
-                               hash_sl)
-  if err != nil {
-    fmt.Println("Error:", err)
-    conn.Close()
-    return
-  }
-  _, err = conn.Write(sign_sl)
-  if err != nil {
-    fmt.Println("Error:", err)
-    conn.Close()
-    return
-  }
-  _, err = conn.Write(cur_len)
-  if err != nil {
-    fmt.Println("Error:", err)
-    conn.Close()
-    return
-  }
-  hash_buffr = sha256.Sum256(final_cur_len)
-  hash_sl = hash_buffr[:]
-  sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
-                               admin_private_key,
-                               crypto.SHA256,
-                               hash_sl)
-  if err != nil {
-    fmt.Println("Error:", err)
-    conn.Close()
-    return
-  }
-  _, err = conn.Write(sign_sl)
-  if err != nil {
-    fmt.Println("Error:", err)
-    conn.Close()
-    return
-  }
-  _, err = conn.Write(final_cur_len)
-  if err != nil {
-    fmt.Println("Error:", err)
-    conn.Close()
-    return
-  }
-  hash_buffr = sha256.Sum256(data_sl)
-  hash_sl = hash_buffr[:]
-  sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
-                               admin_private_key,
-                               crypto.SHA256,
-                               hash_sl)
-  if err != nil {
-    fmt.Println("Error:", err)
-    conn.Close()
-    return
-  }
-  _, err = conn.Write(sign_sl)
-  if err != nil {
-    fmt.Println("Error:", err)
-    conn.Close()
-    return
-  }
-  _, err = conn.Write(data_sl)
-  if err != nil {
-    fmt.Println("Error:", err)
-    conn.Close()
-    return
-  }
   ////
   //SENDING ACTUAL DATA
   for _, cur_commit := range my_vec {
@@ -924,7 +845,8 @@ func GetRequestAdmin(conn net.Conn,
       conn.Close()
       return
     }
-    err = TreeSend(&conn, my_src + "/" + cur_commit, admin_private_key)
+    fmt.Println("ici:", my_src + "/data/" + cur_commit)
+    err = TreeSend(&conn, my_src + "/data/" + cur_commit, admin_private_key)
     if err != nil {
       conn.Close()
       return
@@ -954,6 +876,7 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  ////
   return
 }
 
