@@ -439,7 +439,12 @@ func ReceiveRequest(conn net.Conn,
            standard_private_key)
          return
        } else if n[0] == 2 {
-         GetRequestStandard(conn, 
+         GetRequestStandardAdmin(conn, 
+                            standard_pub_key, 
+                            standard_private_key)
+         return
+       } else if n[0] == 3 {
+         GetRequestStandardStandard(conn, 
                             standard_pub_key, 
                             standard_private_key)
          return
@@ -459,7 +464,12 @@ func ReceiveRequest(conn net.Conn,
                     admin_private_key)
       return
     } else if n[0] == 2 {
-      GetRequestAdmin(conn, 
+      GetRequestAdminAdmin(conn, 
+                      admin_pub_key, 
+                      admin_private_key)
+      return
+    } else if n[0] == 3 {
+      GetRequestAdminStandard(conn, 
                       admin_pub_key, 
                       admin_private_key)
       return
@@ -468,14 +478,28 @@ func ReceiveRequest(conn net.Conn,
   return
 }
 
-func GetRequestStandard(conn net.Conn, 
+func GetRequestStandardStandard(conn net.Conn, 
                    standard_pub_key *rsa.PublicKey,
                    standard_private_key *rsa.PrivateKey) {
   fmt.Println("Standard")
   return
 }
 
-func GetRequestAdmin(conn net.Conn,
+func GetRequestAdminStandard(conn net.Conn, 
+                   admin_pub_key *rsa.PublicKey,
+                   admin_private_key *rsa.PrivateKey) {
+  fmt.Println("Standard")
+  return
+}
+
+func GetRequestStandardAdmin(conn net.Conn, 
+                   standard_pub_key *rsa.PublicKey,
+                   standard_private_key *rsa.PrivateKey) {
+  fmt.Println("Standard")
+  return
+}
+
+func GetRequestAdminAdmin(conn net.Conn,
                    admin_pub_key *rsa.PublicKey,
                    admin_private_key *rsa.PrivateKey) {
   var cur_len = make([]byte, 1)
