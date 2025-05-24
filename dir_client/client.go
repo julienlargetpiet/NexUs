@@ -1037,9 +1037,9 @@ func main() {
     fmt.Println("Example: nexus send ,will send the content of your last commit to the server\n")
     fmt.Println("'sync' will sync your commits with the server commit for the same branch on the same project, this won't download the content of the non synchronized commit like explained in the README.md but will sync the commits.txt file\n")
     fmt.Println("'branchget' ,will download the provided admin branch NexUs project")
-    fmt.Println("Example: nexus branchget 125.14.146.179:8080@_home_project1/main will download the main branch of the _home_project1 NexUs project")
+    fmt.Println("Example: nexus branchget 125.14.146.179:8080@_home_project1/main will download the main branch of the _home_project1 NexUs project\n")
     fmt.Println("'bring' will just bring the required project downloaded via 'branchget' or 'waitingbranchget' to your current directory")
-    fmt.Println("Example: nexus bring _home_project1 will bring the branch of the _home_project1 NexUs project downloaded via 'branchget' or 'waitingbranchget', in this case the main branch")
+    fmt.Println("Example: nexus bring _home_project1 will bring the branch of the _home_project1 NexUs project downloaded via 'branchget' or 'waitingbranchget', in this case the main branch\n")
     return
   }
 
