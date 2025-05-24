@@ -876,6 +876,7 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
+  conn.Close()
   ////
   return
 }
