@@ -4767,7 +4767,7 @@ func main() {
       return
     }
     conn.Close()
-    fmt.Print("%v", string(data))
+    fmt.Printf("%v", string(data))
     return
   }
 
