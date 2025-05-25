@@ -519,7 +519,6 @@ func ExistDirFile2(x *string, file_name *string) (bool, string, error) {
       cur_val += string(data[i])
     } else {
       n2 = len(cur_val)
-      fmt.Println("cur_val:", cur_val, n2)
       if n > n2 {
         if (*x)[n2] == '/' {
           i2 = 0
