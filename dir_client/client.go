@@ -4319,17 +4319,421 @@ func main() {
     return
   }
 
-  //if frst_arg == "seewaitingbranch" {
+  if frst_arg == "seebranch" || frst_arg == "seewaitingbranch" {
+    var cur_host string
+    if n < 3 {
+      fmt.Println("Error: host is not provided")
+      return
+    } else if n > 3 {
+      fmt.Println("Error: too much arguments")
+      return
+    }
+    cur_host = os.Args[2]
+    var cur_ip string = ""
+    var cur_port string = ""
+    var cur_project string = ""
+    var host_len int = len(cur_host)
+    var i int = 0
+    for i < host_len && cur_host[i] != ':' {
+      cur_ip += string(cur_host[i])
+      i++
+    }
+    i++
+    is_valid = GoodIP(&cur_ip)
+    if !is_valid {
+      fmt.Println("Error: the ip provided is not good")
+      return
+    }
+    for i < host_len && cur_host[i] != '@' {
+      cur_port += string(cur_host[i])
+      i++
+    }
+    i++
+    is_valid = GoodPort(&cur_port)
+    if !is_valid {
+      fmt.Println("Error: the port provided is not good")
+      return
+    }
+    for i < host_len {
+      cur_project += string(cur_host[i])
+      i++
+    }
+    if cur_project == "" {
+      fmt.Println("Error:", err)
+      return
+    }
+    data, err = os.ReadFile(base_dir + "pubKey.pem")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    block, _ := pem.Decode(data)
+    if block == nil {
+      fmt.Println("Error: Failed to decode 'pubKey.pem'")
+      return
+    }
+    if block.Type != "RSA PUBLIC KEY" {
+      fmt.Println("Error: 'pubKey.pem' does not contain an RSA public key")
+      return
+    }
+    pub_key, err := x509.ParsePKCS1PublicKey(block.Bytes)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    data, err = os.ReadFile(base_dir + "privateKey.pem")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    block, _ = pem.Decode(data)
+    if block == nil {
+      fmt.Println("Error: Failed to decode 'privateKey.pem'")
+      return
+    }
+    if block.Type != "RSA PRIVATE KEY" {
+      fmt.Println("Error: 'privateKey.pem' does not contain an RSA private key")
+      return
+    }
+    private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    var cur_len = make([]byte, 1)
+    if frst_arg == "seebranch" {
+      cur_len = []byte{4}
+    } else {
+      cur_len = []byte{5}
+    }
+    hash_buffr := sha256.Sum256(cur_len)
+    hash_sl := hash_buffr[:]
+    sign_sl, err := rsa.SignPKCS1v15(rand.Reader,
+                                    private_key,
+                                    crypto.SHA256,
+                                    hash_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    conn, err := net.Dial("tcp", cur_ip + ":" + cur_port)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    _, err = conn.Write(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    tmp_val := []byte(cur_project)
+    cur_len = []byte{byte(len(tmp_val))}
+    hash_buffr = sha256.Sum256(cur_len)
+    hash_sl = hash_buffr[:]
+    sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               private_key,
+                               crypto.SHA256,
+                               hash_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    hash_buffr = sha256.Sum256(tmp_val)
+    hash_sl = hash_buffr[:]
+    sign_sl, err = rsa.SignPKCS1v15(rand.Reader,
+                               private_key,
+                               crypto.SHA256,
+                               hash_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(tmp_val)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    hash_buffr = sha256.Sum256(cur_len)
+    hash_sl = hash_buffr[:]
+    err = rsa.VerifyPKCS1v15(pub_key,
+                             crypto.SHA256,
+                             hash_sl,
+                             sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    final_cur_len := make([]byte, cur_len[0])
+    _, err = conn.Read(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(final_cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    hash_buffr = sha256.Sum256(final_cur_len)
+    hash_sl = hash_buffr[:]
+    err = rsa.VerifyPKCS1v15(pub_key,
+                             crypto.SHA256,
+                             hash_sl,
+                             sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    target_len := ByteSliceToInt(final_cur_len)
+    data = make([]byte, target_len)
+    _, err = conn.Read(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(data)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    hash_buffr = sha256.Sum256(data)
+    hash_sl = hash_buffr[:]
+    err = rsa.VerifyPKCS1v15(pub_key,
+                             crypto.SHA256,
+                             hash_sl,
+                             sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    conn.Close()
+    fmt.Printf("%v", string(data))
+    return
+  }
 
-  //}
-
-  //if frst_arg == "seebranch" {
-
-  //}
-
-  //if frst_arg == "seeproject" {
-
-  //}
+  if frst_arg == "seeproject" {
+    var cur_host string
+    if n < 3 {
+      fmt.Println("Error: host is not provided")
+      return
+    } else if n > 3 {
+      fmt.Println("Error: too much arguments")
+      return
+    }
+    cur_host = os.Args[2]
+    var cur_ip string = ""
+    var cur_port string = ""
+    var host_len int = len(cur_host)
+    var i int = 0
+    for i < host_len && cur_host[i] != ':' {
+      cur_ip += string(cur_host[i])
+      i++
+    }
+    i++
+    is_valid = GoodIP(&cur_ip)
+    if !is_valid {
+      fmt.Println("Error: the ip provided is not good")
+      return
+    }
+    for i < host_len {
+      cur_port += string(cur_host[i])
+      i++
+    }
+    i++
+    is_valid = GoodPort(&cur_port)
+    if !is_valid {
+      fmt.Println("Error: the port provided is not good")
+      return
+    }
+    data, err = os.ReadFile(base_dir + "pubKey.pem")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    block, _ := pem.Decode(data)
+    if block == nil {
+      fmt.Println("Error: Failed to decode 'pubKey.pem'")
+      return
+    }
+    if block.Type != "RSA PUBLIC KEY" {
+      fmt.Println("Error: 'pubKey.pem' does not contain an RSA public key")
+      return
+    }
+    pub_key, err := x509.ParsePKCS1PublicKey(block.Bytes)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    data, err = os.ReadFile(base_dir + "privateKey.pem")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    block, _ = pem.Decode(data)
+    if block == nil {
+      fmt.Println("Error: Failed to decode 'privateKey.pem'")
+      return
+    }
+    if block.Type != "RSA PRIVATE KEY" {
+      fmt.Println("Error: 'privateKey.pem' does not contain an RSA private key")
+      return
+    }
+    private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    var cur_len = []byte{6}
+    hash_buffr := sha256.Sum256(cur_len)
+    hash_sl := hash_buffr[:]
+    sign_sl, err := rsa.SignPKCS1v15(rand.Reader,
+                                    private_key,
+                                    crypto.SHA256,
+                                    hash_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    conn, err := net.Dial("tcp", cur_ip + ":" + cur_port)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    _, err = conn.Write(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    hash_buffr = sha256.Sum256(cur_len)
+    hash_sl = hash_buffr[:]
+    err = rsa.VerifyPKCS1v15(pub_key,
+                             crypto.SHA256,
+                             hash_sl,
+                             sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    final_cur_len := make([]byte, cur_len[0])
+    _, err = conn.Read(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(final_cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    hash_buffr = sha256.Sum256(final_cur_len)
+    hash_sl = hash_buffr[:]
+    err = rsa.VerifyPKCS1v15(pub_key,
+                             crypto.SHA256,
+                             hash_sl,
+                             sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    target_len := ByteSliceToInt(final_cur_len)
+    data = make([]byte, target_len)
+    _, err = conn.Read(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(data)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    hash_buffr = sha256.Sum256(data)
+    hash_sl = hash_buffr[:]
+    err = rsa.VerifyPKCS1v15(pub_key,
+                             crypto.SHA256,
+                             hash_sl,
+                             sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    conn.Close()
+    fmt.Print("%v", string(data))
+    return
+  }
 
   fmt.Println("Error: command not found, try 'help' command")
   return
