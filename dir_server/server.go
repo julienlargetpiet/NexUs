@@ -38,7 +38,6 @@ func TreeSend(conn *net.Conn,
   var i int
   for n > -1 {
     cur_path = vec_dirname[n]
-    fmt.Println("cur_path:", cur_path)
     entries, err := os.ReadDir(cur_path)
     if err != nil {
       return err
@@ -49,7 +48,6 @@ func TreeSend(conn *net.Conn,
       for i = len_base_dir; i < len(cur_path_found); i++ {
         cur_path_found2 += string(cur_path_found[i])
       }
-      fmt.Println("cur_path2:", cur_path_found2)
       cur_send = []byte(cur_path_found2)
       cur_send_len = []byte{byte(len(cur_send))}
       hash_buffr = sha256.Sum256(cur_send_len)
@@ -498,7 +496,6 @@ func GetRequestStandard(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("cur_len:", cur_len)
   hash_buffr := sha256.Sum256(cur_len)
   hash_sl = hash_buffr[:]
   err = rsa.VerifyPKCS1v15(pub_key,
@@ -542,7 +539,6 @@ func GetRequestStandard(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("tmp_val:", tmp_val)
   if !is_valid {
     fmt.Println("Repo does not exist")
     conn.Close()
@@ -612,7 +608,6 @@ func GetRequestStandard(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("my_src:", my_src)
   ////
   //RECEIVE DEPTH
   _, err = conn.Read(sign_sl)
@@ -635,7 +630,6 @@ func GetRequestStandard(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("cur_len:", cur_len)
   data_sl = make([]byte, cur_len[0])
   _, err = conn.Read(sign_sl)
   if err != nil {
@@ -657,7 +651,6 @@ func GetRequestStandard(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("data_sl:", data_sl)
   target_len := ByteSliceToInt(data_sl)
   data_sl, err = os.ReadFile(my_src + "/commits.txt")
   if err != nil {
@@ -894,7 +887,6 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("cur_len:", cur_len)
   hash_buffr := sha256.Sum256(cur_len)
   hash_sl = hash_buffr[:]
   err = rsa.VerifyPKCS1v15(pub_key,
@@ -938,7 +930,6 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("tmp_val:", tmp_val)
   if !is_valid {
     fmt.Println("Repo does not exist")
     conn.Close()
@@ -1008,7 +999,6 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("my_src:", my_src)
   ////
   //RECEIVE DEPTH
   _, err = conn.Read(sign_sl)
@@ -1031,7 +1021,6 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("cur_len:", cur_len)
   data_sl = make([]byte, cur_len[0])
   _, err = conn.Read(sign_sl)
   if err != nil {
@@ -1053,7 +1042,6 @@ func GetRequestAdmin(conn net.Conn,
     conn.Close()
     return
   }
-  fmt.Println("data_sl:", data_sl)
   target_len := ByteSliceToInt(data_sl)
   data_sl, err = os.ReadFile(my_src + "/commits.txt")
   if err != nil {
