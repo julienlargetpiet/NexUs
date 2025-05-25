@@ -513,7 +513,6 @@ func ExistDirFile2(x *string, file_name *string) (bool, string, error) {
   var i int
   var cur_int int = 0
   var cur_idx int = 0
-  fmt.Println("x:", *x, n)
   for i = 0; i < len(data); i++ {
     if data[i] != 10 {
       cur_val += string(data[i])
@@ -968,10 +967,15 @@ func main() {
   var data []byte
   var str_data string
   initiated_repo := base_dir + "initiated.txt"
-  cur_dir, _ := filepath.Abs(".")
-  n := len(arg_v)
-  var i int
+  var i int = 6
   var i2 int
+  pre_cur_dir, _ := filepath.Abs(".")
+  for pre_cur_dir[i] != '/' {
+    i += 1
+  }
+  cur_dir := pre_cur_dir[i + 1:]
+  pre_cur_dir = pre_cur_dir[:i + 1]
+  n := len(arg_v)
 
   if n == 1 {
     fmt.Println("Not enough argument")
@@ -1107,56 +1111,56 @@ func main() {
     }
     err = os.WriteFile(base_dir + cur_val + "/main/cur_added.txt", 
                        []byte(cur_dir + "\n"), 
-                       0755)
+                       0644)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
     err = os.WriteFile(base_dir + cur_val + "/main/is_pushed.txt", 
                        []byte("1"), 
-                       0755)
+                       0644)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
     err = os.WriteFile(base_dir + cur_val + "/main/addorder.txt", 
                        []byte(""), 
-                       0755)
+                       0644)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
     err = os.WriteFile(base_dir + cur_val + "/main/commits.txt", 
                        []byte(""), 
-                       0755)
+                       0644)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
     err = os.WriteFile(base_dir + cur_val + "/branches.txt", 
                        []byte("main\n"), 
-                       0755)
+                       0644)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
     err = os.WriteFile(base_dir + cur_val + "/cur_branch.txt", 
                        []byte("main"), 
-                       0755)
+                       0644)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
     err = os.WriteFile(base_dir + cur_val + "/host_info.txt", 
                        []byte("main\n"), 
-                       0755)
+                       0644)
     if err != nil {
       fmt.Println("Error:", err)
       return
     }
     err = os.WriteFile(base_dir + cur_val + "/main/cur_commit.txt", 
                        []byte(""), 
-                       0755)
+                       0644)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -1270,6 +1274,7 @@ func main() {
         fmt.Println("Error:", err)
         return
       }
+      file = pre_cur_dir + file
       fileinfo, err = os.Stat(file)
       if err != nil {
         fmt.Println("Error:", err)
@@ -2104,6 +2109,7 @@ func main() {
       fmt.Println("Error:", err)
       return
     }
+    cur_dir = pre_cur_dir + cur_dir
     entries, err := os.ReadDir(cur_dir)
     if err != nil {
       fmt.Println("Error:", err)
@@ -2126,7 +2132,6 @@ func main() {
     }
     cur_val2 += ("/data/" + cur_val + "/data")
     err = deCompressCopyDir(&cur_val2, &cur_dir)
-    fmt.Println("okokl")
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -2661,6 +2666,7 @@ func main() {
         fmt.Println("Error:", err)
         return
       }
+      file = pre_cur_dir + file
       fileinfo, err = os.Stat(file)
       if err != nil {
         fmt.Println("Error:", err)
