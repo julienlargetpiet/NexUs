@@ -2028,6 +2028,15 @@ func main() {
       fmt.Println("Error: too much arguments")
       return
     }
+    is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    if !is_valid {
+      fmt.Println("Error: repo not initialized")
+      return
+    }
     cur_val4 = os.Args[2]
     i2 = StringToInt(cur_val4)
     cur_val3 = ""
@@ -4316,8 +4325,18 @@ func main() {
       i -= 1
     }
     cur_project += ("/data/" + string(tmp_val) + "/data")
-    fmt.Println("cur_project:", cur_project)
     err = deCompressCopyDir(&cur_project, &cur_dir)
+    if err != nil {
+      fmt.Println("Error:", err) 
+      return
+    }
+    data, err = os.ReadFile(base_dir + "initiated.txt")
+    if err != nil {
+      fmt.Println("Error:", err) 
+      return
+    }
+    data = append(data, []byte(cur_dir + "\n")...)
+    err = os.WriteFile(base_dir + "initiated.txt", data, 0644)
     if err != nil {
       fmt.Println("Error:", err) 
       return
