@@ -513,22 +513,28 @@ func ExistDirFile2(x *string, file_name *string) (bool, string, error) {
   var i int
   var cur_int int = 0
   var cur_idx int = 0
+  fmt.Println("x:", *x, n)
   for i = 0; i < len(data); i++ {
     if data[i] != 10 {
       cur_val += string(data[i])
     } else {
       n2 = len(cur_val)
-      if n >= n2 {
-        i2 = 0
-        for i2 < n2 {
-          if (*x)[i2] != cur_val[i2] {
-            break
+      fmt.Println("cur_val:", cur_val, n2)
+      if n > n2 {
+        if (*x)[n2] == '/' {
+          i2 = 0
+          for i2 < n2 {
+            if (*x)[i2] != cur_val[i2] {
+              break
+            }
+            i2++
           }
-          i2++
+          if i2 == n2 {
+            pre_rtn = append(pre_rtn, cur_val)
+          }
         }
-        if i2 == n2 {
-          pre_rtn = append(pre_rtn, cur_val)
-        }
+      } else if *x == cur_val {
+        return true, cur_val, nil
       }
       cur_val = ""
     }
