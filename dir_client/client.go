@@ -1040,6 +1040,12 @@ func main() {
     fmt.Println("Example: nexus branchget 125.14.146.179:8080@_home_project1/main will download the main branch of the _home_project1 NexUs project\n")
     fmt.Println("'bring' will just bring the required project downloaded via 'branchget' or 'waitingbranchget' to your current directory")
     fmt.Println("Example: nexus bring _home_project1 will bring the branch of the _home_project1 NexUs project downloaded via 'branchget' or 'waitingbranchget', in this case the main branch\n")
+    fmt.Println("'seebranch host@_home_project1' ,will print the official branches for the provided project")
+    fmt.Println("Example: nexus seebranch 12.145.123.14:8080@_home_project1 ,will print all the available official branches for the _home_project1 NexUs project\n")
+    fmt.Println("'seewaitingbranch host@_home_project1' ,will print the unofficial branches for the provided project")
+    fmt.Println("Example: nexus 12.43.128.223:8080@seewaitingbranch _home_project1 ,will print all the available unofficial branches for the _home_project1 NexUs project\n")
+    fmt.Println("'seeproject host' ,will print the available NexUs projects from the host")
+    fmt.Println("Example: nexus 156.214.36.44:8080 ,will print all the available NexUs projects from the provided host")
     return
   }
 
