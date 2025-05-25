@@ -3638,11 +3638,7 @@ func main() {
     return
   }
 
-  //if frst_arg == "waitingbranchget" {
-  //  
-  //}
-
-  if frst_arg == "branchget" {
+  if frst_arg == "branchget" || frst_arg == "waitingbranchget" {
     var depth_commit string = "full"
     var depth_commit_int int = 0
     var cur_host string
@@ -3749,7 +3745,12 @@ func main() {
       return
     }
     //SEND GET REQUEST
-    cur_len := []byte{byte(2)}
+    var cur_len = make([]byte, 1)
+    if frst_arg == "branchget" {
+      cur_len = []byte{byte(2)}
+    } else {
+      cur_len = []byte{byte(3)}
+    }
     hash_buffr := sha256.Sum256(cur_len)
     hash_sl := hash_buffr[:]
     sign_sl, err := rsa.SignPKCS1v15(rand.Reader,
@@ -3860,9 +3861,6 @@ func main() {
     }
     ////
     //SEND DEPTH
-    fmt.Println("pub_key:", pub_key)
-    //var cur_name string
-    //var target_len int
     final_cur_len := IntToByteSlice(depth_commit_int)
     cur_len = []byte{byte(len(final_cur_len))}
     hash_buffr = sha256.Sum256(cur_len)
@@ -4139,7 +4137,6 @@ func main() {
         return
       }
       for {
-        fmt.Println("loop")
         _, err = conn.Read(sign_sl)
         if err != nil {
           conn.Close()
