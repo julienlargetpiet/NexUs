@@ -179,4 +179,30 @@ ssd1/projectdir $ nexus commitgoback 5
 
 Each `commitgoback` comand is treated as a new commit, so you can revert a `commitgoback` with a `commitgoback`
 
+## But wait, how to commit ?
+
+Just do:
+
+```
+ssd1/projectdir $ nexus commit "commit_message"
+commit hash: f614d844fc86bffd0723c10084463b79137f7614886d94bb18b6dd104acfa92e
+```
+
+## Branches
+
+To create a new branch from a NexUs project do:
+
+```
+ssd1/projectdir $ nexus branchnew branchname
+```
+
+You can also list branches with `branchlist` and see on what branch you are with `branchmy`
+
+To switch over a created branch do:
+
+```
+ssd1/projectdir $ nexus branchswitch branchnametoswitchon
+```
+
+
 
