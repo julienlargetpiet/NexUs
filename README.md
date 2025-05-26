@@ -10,7 +10,9 @@
 
 **Designed to work on Linux filesystems accepting concurrent read of files**
 
-NexUs come with its own protocols and encoding format for integers.
+NexUs come with its own protocols directly based on TCP/IP and encoding format for positive integers, documented later in the README.md
+
+NexUs is made to be very fast and memory efficient, especially on server side.
 
 ## Do not trust anybody
 
@@ -273,7 +275,45 @@ If you are an admin user, you can download the standard branches of a NexUs proj
 
 ```
 ssd1/projectdir $ nexus waitingbranchget ip:port@project_name/branchname
+```
 
+## Sending changes to server
 
+When you have comited your changes, you are ready to send them to the server, to do so first assure that the host info are valid for your current project:
+
+```
+ssd1/projectdir $ hostinfo
+12.12.12.12:8080
+```
+
+If it is not valid, set it:
+
+```
+ssd1/projectdir $ sethost 12.12.12.12:8080
+```
+
+Now you are ready to send:
+
+```
+ssd1/projectdir $ nexus send
+```
+
+If you see this error:
+
+```
+Error: you are desync from the NexUs server, run 'sync' to be synchronized
+```
+
+It means that your commit history is not sync with the NexUs server commit history for the same branch project.
+
+As it is written, to resolve this issue, `sync` it
+
+## Sync commits
+
+To sync commit history for a branch project do:
+
+```
+ssd1/projectdir $ nexus sync
+```
 
 
