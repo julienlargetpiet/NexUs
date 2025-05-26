@@ -1502,7 +1502,7 @@ func main() {
       return
     }
     cur_val2 += ("/data/" + str_data + "/data")
-    entries, err := os.ReadDir(cur_dir)
+    entries, err := os.ReadDir(pre_cur_dir + cur_dir)
     if err != nil {
       fmt.Println("Error:", err)
       return
@@ -1522,7 +1522,8 @@ func main() {
         }
       }
     }
-    err = deCompressCopyDir(&cur_val2, &cur_dir)
+    actual_dir := pre_cur_dir + cur_dir
+    err = deCompressCopyDir(&cur_val2, &actual_dir)
     if err != nil {
       fmt.Println("Error:", err)
       return
