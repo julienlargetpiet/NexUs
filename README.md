@@ -1,5 +1,3 @@
-In construction...
-
 # NexUs
 
 <img src="logo.jpg" height="720" width="480">
