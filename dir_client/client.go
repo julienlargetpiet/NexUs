@@ -3340,6 +3340,10 @@ func main() {
   }
 
   if frst_arg == "sync" {
+    if n > 2 {
+      fmt.Println("Error: too much arguments")
+      return
+    }
     is_valid, err = ExistDirFile(&cur_dir, &initiated_repo)
     if err != nil {
       fmt.Println("Error:", err)
