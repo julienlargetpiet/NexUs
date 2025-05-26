@@ -158,4 +158,25 @@ ssd1/projectdir $ nexus sasstructdiff 0
 
 ## Go back to a previous commit
 
+To identify wich commit number you have to go back do:
+
+```
+ssd1/projectdir $ nexus commitlist
+commit - 0 : 3a627f67b013f858703c12c0bf3b6f963d2d2fa1cd88ece57463128323b60e62
+commit - 1 : 3a627f67b013f858703c12c0bf3b6f963d2d2fa1cd88ece57463128323b60e62
+commit - 2 : 3a627f67b013f858703c12c0bf3b6f963d2d2fa1cd88ece57463128323b60e62
+commit - 3 : 3a627f67b013f858703c12c0bf3b6f963d2d2fa1cd88ece57463128323b60e62
+commit - 4 : f614d844fc86bffd0723c10084463b79137f7614886d94bb18b6dd104acfa92e
+commit - 5 : 3a627f67b013f858703c12c0bf3b6f963d2d2fa1cd88ece57463128323b60e62
+commit - 6 : f614d844fc86bffd0723c10084463b79137f7614886d94bb18b6dd104acfa92e
+```
+
+Now if you want to go back to commit 5 do:
+
+```
+ssd1/projectdir $ nexus commitgoback 5
+```
+
+Each `commitgoback` comand is treated as a new commit, so you can revert a `commitgoback` with a `commitgoback`
+
 
