@@ -4819,7 +4819,7 @@ func main() {
         cur_val3 += string(cur_dir[i])
       }
     }
-    data, err = os.ReadFile(base_dir + cur_val3 + "host_info.txt")
+    data, err = os.ReadFile(base_dir + cur_val3 + "/host_info.txt")
     if err != nil {
       fmt.Println("Error:", err)
       return
