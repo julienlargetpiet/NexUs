@@ -53,7 +53,13 @@ ssd1/projectdir $ nexus bring ssd1_projectdir
 
 ## User's autonomy
 
+Sometimes when the work areas of each contributors is well defined and that we trust in each one, syncing the files we don't work on is non-optimal, because of the size of the files we won't touch taking too long to download.
 
+In this case, if we know that another admin have not modified any of my working files during previous commit, just syncing the commit history is a good idea.
+
+If we really want to see the changes the other contributors have made to their working files, we can download the entire project with a desired commit depth (last commits we want).
+
+**This is the NexUs assumption**
 
 # Client commands
 
