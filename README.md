@@ -341,10 +341,3 @@ They are stored in a `zlib` compressed format, like git does.
 <img src="doc3.jpg">
 
 **Others Nexus protocols are simpler and are always based on the RSA signatures of each send and received data, like seeproject...**
-
-# Client Filestructure
-
-# Server Filestrcuture
-
-
-
