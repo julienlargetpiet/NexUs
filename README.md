@@ -318,19 +318,27 @@ To sync commit history for a branch project do:
 ssd1/projectdir $ nexus sync
 ```
 
+# How the data of commits are stored ?
+
+They are stored in a `zlib` compressed format, like git does.
+
 **An help command is available**
 
 # Some Protocols details
 
-## Nexus rrequests sort method
+## Nexus requests sort method
+
+<img src="doc1.jpg" height="720" width="720">
 
 ## NexUs `send` protocol
 
-## NexUs `get` protocol
+<img src="doc2.jpg" height="720" width="720">
 
-## NexUs `sync` protocol
+# Client Filestructure
 
-**Others Nexus protocols are simpler and are always based on the RSA signatures of each data sent, like seeproject...**
+# Server Filestrcuture
+
+**Others Nexus protocols are simpler and are always based on the RSA signatures of each send and received data, like seeproject...**
 
 
 
