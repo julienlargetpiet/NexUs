@@ -4333,7 +4333,8 @@ func main() {
       i -= 1
     }
     cur_project += ("/data/" + string(tmp_val) + "/data")
-    err = deCompressCopyDir(&cur_project, &cur_dir)
+    actual_dir := pre_cur_dir + cur_dir
+    err = deCompressCopyDir(&cur_project, &actual_dir)
     if err != nil {
       fmt.Println("Error:", err) 
       return
