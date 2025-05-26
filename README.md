@@ -8,11 +8,11 @@
 
 # Philosophy
 
-**Designed to work on Linux filesystems accepting concurrent read of files**
+Designed to work on Linux filesystems accepting concurrent read of files
 
 NexUs come with its own protocols directly based on TCP/IP and encoding format for positive integers, documented later in the README.md
 
-NexUs is made to be very fast and memory efficient, especially on server side.
+**NexUs is made to be very fast and memory efficient, especially on server side.**
 
 ## Do not trust anybody
 
