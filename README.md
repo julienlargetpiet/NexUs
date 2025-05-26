@@ -1,6 +1,6 @@
 # NexUs
 
-<img src="logo.jpg" height="720" width="480">
+<img src="logo.jpg" height="360" width="240">
 
 **Welcome to NexUs, a versioning system designed for anonymous collaborative innovation, where your contributions are respected, your autonomy is valued, and every commit tells a story!**
 
@@ -50,6 +50,10 @@ featureC
 ssd1/projectdir $ nexus branchget 123.123.123.123:8080@ssd1_projectdir/main
 ssd1/projectdir $ nexus bring ssd1_projectdir
 ```
+
+## User's autonomy
+
+
 
 # Client commands
 
