@@ -318,6 +318,8 @@ To sync commit history for a branch project do:
 ssd1/projectdir $ nexus sync
 ```
 
+**An help command is available**
+
 # Some Protocols details
 
 ## Nexus rrequests sort method
