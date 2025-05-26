@@ -57,6 +57,33 @@ The clien let you choose the directory where all the contents are loaded from.
 
 This can be achived by changing the value of `base_dir` at line 20 of `client.go`, must ends with a `/`, example: `"/home/kvv/ssd1/NexUs/dir_client/"` 
 
+## Setting RSA pair
+
+In the defined `base_dir`, create the file `pubKey.pem` containing the shared public RSA key transfered by the administrator of the NexUs server. Do the same for `privateKey.pem` for the private RSA key.
+
+To know if you are an administrator or a standard user do:
+
+```
+$ nexus whoami host
+Admin user / Standard user
+```
+
+## 2 ways to initiate a project
+
+First way, create a directory where you want to create your project, then do `nexus init`
+
+This will create your project with the name of your filepath with `/` replaced with `_`, keep in mind it is by designed, see later on this documentation.
+
+Second way, get a project from a NexUs server. Do `nexus branchget host@project_name/branchname`
+
+Then create a directory with a filepath that fits the project name, enter and then do:
+
+```
+project/name $ nexus bring project_name
+```
+
+And voilà, now you have the content of the last commit in your working project directory and all setup client side to bring changes to the project.
+
 ## What happen when i add?
 
 When you add files and/or directories before commiting changes, they are stored in the `base_dir/project_name/branchname/sas` directory.
@@ -130,3 +157,5 @@ ssd1/projectdir $ nexus sasstructdiff 0
 ```
 
 ## Go back to a previous commit
+
+
