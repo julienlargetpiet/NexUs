@@ -10,6 +10,8 @@
 
 **Designed to work on Linux filesystems accepting concurrent read of files**
 
+NexUs come with its own protocols and encoding format for integers.
+
 ## Do not trust anybody
 
 This versioning enables 2 levels of trust.
@@ -242,6 +244,36 @@ ssd1/projectdir $ nexus branchbring main subdir/a.txt
 To see the available NexUs project from a NexUs server, do:
 
 ```
-ssd1/projectdir $ nexus
+ssd1/projectdir $ nexus seeproject ip:port
 ```
+
+## See the branches
+
+If you are a standard or admin user, you can view the admin branches of a NexUs project available to download:
+
+```
+ssd1/projectdir $ nexus seebranch ip:port@project_name
+```
+
+If you are an admin user, you can view the standard branches of a NexUs project available to download:
+
+```
+ssd1/projectdir $ nexus seewaitingbranch ip:port@project_name
+```
+
+## Download branches
+
+If you are a standard or admin user, you can download the admin branches of a NexUs project available to download:
+
+```
+ssd1/projectdir $ nexus branchget ip:port@project_name/branchname
+```
+
+If you are an admin user, you can download the standard branches of a NexUs project available to download:
+
+```
+ssd1/projectdir $ nexus waitingbranchget ip:port@project_name/branchname
+
+
+
 
