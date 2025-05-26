@@ -460,6 +460,12 @@ func ReceiveRequest(conn net.Conn,
          SeeProject(conn, 
                   standard_private_key)
          return
+       } else if n[0] == 7 {
+         WhoAmIRequest(conn, standard_private_key, 0)
+         return
+       } else {
+         conn.Close()
+         return
        }
     }
     if n[0] == 0 {
@@ -499,8 +505,45 @@ func ReceiveRequest(conn net.Conn,
       SeeProject(conn, 
                admin_private_key)
       return
+    } else if n[0] == 7 {
+      WhoAmIRequest(conn, admin_private_key, 1)
+      return
+    } else {
+      conn.Close()
+      return
     }
   }
+  return
+}
+
+func WhoAmIRequest(conn net.Conn, 
+                  private_key *rsa.PrivateKey,
+                  x int) {
+  cur_len := []byte{byte(x)}
+  hash_buffr := sha256.Sum256(cur_len)
+  hash_sl := hash_buffr[:]
+  sign_sl, err := rsa.SignPKCS1v15(rand.Reader,
+                             private_key,
+                             crypto.SHA256,
+                             hash_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(sign_sl)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  _, err = conn.Write(cur_len)
+  if err != nil {
+    fmt.Println("Error:", err)
+    conn.Close()
+    return
+  }
+  conn.Close()
   return
 }
 
