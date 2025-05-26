@@ -2,7 +2,7 @@ In construction...
 
 # NexUs
 
-![logo](logo.jpg)
+<img src="logo.jpg" height="720" width="480">
 
 **Welcome to NexUs, a versioning system designed for anonymous collaborative innovation, where your contributions are respected, your autonomy is valued, and every commit tells a story!**
 
