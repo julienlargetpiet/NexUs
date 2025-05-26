@@ -343,7 +343,7 @@ They are stored in a `zlib` compressed format, like git does.
 **Others Nexus protocols are simpler and are always based on the RSA signatures of each send and received data, like seeproject...**
 # Custom encoding
 
-Ok, so i had to encode a structure data, a positive integer in this case representing the space for the server to reserve a byte slice for a file content, image, text...
+Ok, so i had to encode a structured data, a positive integer in this case representing the space for the server to reserve a byte slice for a file content, image, text...
 
 Basically, how to convert any positive integer to a vector of number from 0 to 255.
 
