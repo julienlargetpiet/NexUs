@@ -518,8 +518,8 @@ func ReceiveRequest(conn net.Conn,
 
 func WhoAmIRequest(conn net.Conn, 
                   private_key *rsa.PrivateKey,
-                  x int) {
-  cur_len := []byte{byte(x)}
+                  x byte) {
+  cur_len := []byte{x}
   hash_buffr := sha256.Sum256(cur_len)
   hash_sl := hash_buffr[:]
   sign_sl, err := rsa.SignPKCS1v15(rand.Reader,
