@@ -1902,7 +1902,6 @@ func main() {
         cur_val = ""
       }
     }
-    fmt.Println("okok", cur_val2)
     int_commit1 := StringToInt(commit1)
     if int_commit1 < 0 {
       fmt.Println("Error: the first commit begins at 0")
@@ -1922,8 +1921,6 @@ func main() {
       return
     }
     cur_val4 = cur_val2 + "/data/" + commit_hist[int_commit2] + "/added.txt"
-    fmt.Println(commit_hist[int_commit2])
-    fmt.Println(cur_val4)
     cur_val = cur_dir + "/" + content1
     is_valid, err = ExistDirFile(&cur_val, &cur_val4)
     if err != nil {
