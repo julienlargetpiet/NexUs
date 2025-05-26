@@ -332,6 +332,10 @@ They are stored in a `zlib` compressed format, like git does.
 
 ## NexUs `send` protocol
 
+<img src="doc2A.jpg" height="720" width="920">
+
+<img src="doc2B.jpg" height="720" width="920">
+
 <img src="doc2.jpg" height="720" width="920">
 
 <img src="doc3.jpg" height="720" width="920">
