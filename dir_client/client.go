@@ -1643,7 +1643,7 @@ func main() {
 
   if frst_arg == "branchbring" {
     if n < 3 {
-      fmt.Println("Error: not enough args, the brnach where the content to bring is, is not mentioned")
+      fmt.Println("Error: not enough args, the branch where the content to bring is, is not mentioned")
       return
     }
     if n < 4 {
@@ -1699,7 +1699,7 @@ func main() {
         fmt.Println("Error:", err)
         return
       }
-      err = os.WriteFile(cur_dir + "/" + file, dc_data, 0644)
+      err = os.WriteFile(pre_cur_dir + cur_dir + "/" + file, dc_data, 0644)
       if err != nil {
         fmt.Println("Error:", err)
         return
