@@ -204,5 +204,12 @@ To switch over a created branch do:
 ssd1/projectdir $ nexus branchswitch branchnametoswitchon
 ```
 
+To bring a file from another branche do (example we are on main2 and the file to bring is on main):
+
+```
+ssd1/projectdir $ mkdir subdir
+ssd1/projectdir $ nexus branchbring main subdir/a.txt
+```
+
 
 
