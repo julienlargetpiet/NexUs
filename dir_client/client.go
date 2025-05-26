@@ -1054,7 +1054,9 @@ func main() {
     fmt.Println("'seewaitingbranch host@_home_project1' ,will print the unofficial branches for the provided project")
     fmt.Println("Example: nexus 12.43.128.223:8080@seewaitingbranch _home_project1 ,will print all the available unofficial branches for the _home_project1 NexUs project\n")
     fmt.Println("'seeproject host' ,will print the available NexUs projects from the host")
-    fmt.Println("Example: nexus 156.214.36.44:8080 ,will print all the available NexUs projects from the provided host")
+    fmt.Println("Example: nexus 156.214.36.44:8080 ,will print all the available NexUs projects from the provided host\n")
+    fmt.Println("'whoami' prints if you are a standard or admin user")
+    fmt.Println("Example: nexus whoami\n")
     return
   }
 
