@@ -347,7 +347,7 @@ Ok, so i had to encode a structured data, a positive integer in this case repres
 
 Basically, how to convert any positive integer to a vector of number from 0 to 255.
 
-First solution, i just add 256, which will be 255 (from 0) in a vector, and the ending position value will be the rest of the integer minus the previous additions. But thats is non optimal, because the vector is too long.
+First solution, i just add 256, which will be 255 (from 0) in a vector, and the ending position value will be the rest of the integer minus the previous additions. But that is non optimal, because the vector is too long.
 
 Something that reduces more the size of the integer is of course a division, which will reduce a lot the size of the sending byte vector.
 
