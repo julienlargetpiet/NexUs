@@ -4768,6 +4768,122 @@ func main() {
     return
   }
 
+  if frst_arg == "whoami" {
+    if n > 3 {
+      fmt.Println("Error: too much arguments")
+      return
+    }
+    data, err = os.ReadFile(base_dir + "pubKey.pem")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    block, _ := pem.Decode(data)
+    if block == nil {
+      fmt.Println("Error: Failed to decode 'pubKey.pem'")
+      return
+    }
+    if block.Type != "RSA PUBLIC KEY" {
+      fmt.Println("Error: 'pubKey.pem' does not contain an RSA public key")
+      return
+    }
+    pub_key, err := x509.ParsePKCS1PublicKey(block.Bytes)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    data, err = os.ReadFile(base_dir + "privateKey.pem")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    block, _ = pem.Decode(data)
+    if block == nil {
+      fmt.Println("Error: Failed to decode 'privateKey.pem'")
+      return
+    }
+    if block.Type != "RSA PRIVATE KEY" {
+      fmt.Println("Error: 'privateKey.pem' does not contain an RSA private key")
+      return
+    }
+    private_key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    cur_val3 = ""
+    for i = 0; i < len(cur_dir); i++ {
+      if cur_dir[i] == '/' {
+        cur_val3 += "_"
+      } else {
+        cur_val3 += string(cur_dir[i])
+      }
+    }
+    data, err = os.ReadFile(base_dir + cur_val3 + "host_info.txt")
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    cur_host := string(data)
+    cur_len := []byte{7}
+    hash_buffr := sha256.Sum256(cur_len)
+    hash_sl := hash_buffr[:]
+    sign_sl, err := rsa.SignPKCS1v15(rand.Reader,
+                                    private_key,
+                                    crypto.SHA256,
+                                    hash_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    conn, err := net.Dial("tcp", cur_host)
+    if err != nil {
+      fmt.Println("Error:", err)
+      return
+    }
+    _, err = conn.Write(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Write(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    _, err = conn.Read(cur_len)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    hash_buffr = sha256.Sum256(cur_len)
+    hash_sl = hash_buffr[:]
+    err = rsa.VerifyPKCS1v15(pub_key,
+                             crypto.SHA256,
+                             hash_sl,
+                             sign_sl)
+    if err != nil {
+      fmt.Println("Error:", err)
+      conn.Close()
+      return
+    }
+    if cur_len[0] == 0 {
+      fmt.Println("Standard user")
+    } else {
+      fmt.Println("Admin user")
+    }
+    return
+  }
+
   fmt.Println("Error: command not found, try 'help' command")
   return
 }
