@@ -316,4 +316,17 @@ To sync commit history for a branch project do:
 ssd1/projectdir $ nexus sync
 ```
 
+# Some Protocols details
+
+## Nexus rrequests sort method
+
+## NexUs `send` protocol
+
+## NexUs `get` protocol
+
+## NexUs `sync` protocol
+
+**Others Nexus protocols are simpler and are always based on the RSA signatures of each data sent, like seeproject...**
+
+
 
