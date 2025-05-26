@@ -51,6 +51,8 @@ ssd1/projectdir $ nexus branchget 123.123.123.123:8080@ssd1_projectdir/main
 ssd1/projectdir $ nexus bring ssd1_projectdir
 ```
 
+# Client commands
+
 ## Define a directory where all the NexUs projects are stored
 
 The clien let you choose the directory where all the contents are loaded from.
@@ -117,6 +119,12 @@ Now each time you have to add the changed files do:
 ```
 ssd1/projectdir $ nexus addorder
 
+```
+
+To locate the addorder for you current project branch do:
+
+```
+ssd1/projectdir $ nexus addorderlocate
 ```
 
 ## See changes through commits
@@ -188,6 +196,10 @@ ssd1/projectdir $ nexus commit "commit_message"
 commit hash: f614d844fc86bffd0723c10084463b79137f7614886d94bb18b6dd104acfa92e
 ```
 
+To see the last commit do: `commitlast`
+
+To see the commit message of a specified commit, first spot the right commit number you want with `commitlist`, then do `commitmsg commitnumber`
+
 ## Branches
 
 To create a new branch from a NexUs project do:
@@ -204,12 +216,14 @@ To switch over a created branch do:
 ssd1/projectdir $ nexus branchswitch branchnametoswitchon
 ```
 
-To bring a file from another branche do (example we are on main2 and the file to bring is on main):
+To bring a file from another branch do (example we are on main2 and the file to bring is on main):
 
 ```
 ssd1/projectdir $ mkdir subdir
 ssd1/projectdir $ nexus branchbring main subdir/a.txt
 ```
+
+# Communication with server
 
 
 
