@@ -273,7 +273,7 @@ If you are a standard or admin user, you can download the admin branches of a Ne
 ssd1/projectdir $ nexus branchget ip:port@project_name/branchname
 ```
 
-If you are an admin user, you can download the standard branches of a NexUs project available to download:
+If you are an admin or a standard user, you can download the standard branches of a NexUs project available to download:
 
 ```
 ssd1/projectdir $ nexus waitingbranchget ip:port@project_name/branchname
