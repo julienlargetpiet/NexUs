@@ -14,6 +14,8 @@ NexUs come with its own protocols directly based on TCP/IP and encoding format f
 
 **NexUs is made to be very fast and memory efficient, especially on server side.**
 
+**NexUs protocols are based on RSA signatures of each sent and received data.**
+
 ## Do not trust anybody
 
 This versioning enables 2 levels of trust.
