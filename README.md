@@ -334,6 +334,8 @@ They are stored in a `zlib` compressed format, like git does.
 
 <img src="doc2.jpg" height="720" width="720">
 
+<img src="doc3.jpg" height="720" width="720">
+
 **Others Nexus protocols are simpler and are always based on the RSA signatures of each send and received data, like seeproject...**
 
 # Client Filestructure
