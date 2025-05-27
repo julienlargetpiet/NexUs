@@ -341,7 +341,8 @@ They are stored in a `zlib` compressed format, like git does.
 <img src="doc3.jpg">
 
 **Others Nexus protocols are simpler and are always based on the RSA signatures of each send and received data, like seeproject...**
-# Custom encoding
+
+# Custom encoding (No LittleEndian or BigEndian here)
 
 Ok, so i had to encode a structured data, a positive integer in this case representing the space for the server to reserve a byte slice for a file content, image, text...
 
