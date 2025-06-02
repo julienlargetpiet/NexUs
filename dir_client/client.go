@@ -1358,6 +1358,7 @@ func main() {
         fmt.Println("Error:", err)
         return
       }
+      file = pre_cur_dir + file
       fileinfo, err := os.Stat(file)
       if err != nil {
         fmt.Println("Error:", err)
@@ -1379,7 +1380,7 @@ func main() {
           fmt.Println("Error:", err)
           return
         }
-        err = os.RemoveAll(base_dir + cur_val3 + "/" + branch + "/sas/" + cur_val4)
+        err = os.Remove(base_dir + cur_val3 + "/" + branch + "/sas/" + cur_val4)
         if err != nil {
           fmt.Println("Warning: no " + cur_val4 + " in sas state")
         }
