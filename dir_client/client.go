@@ -3938,35 +3938,44 @@ func main() {
       return
     }
     //PREPARING REPO
-    err = os.Mkdir(base_dir + cur_project, 0755)
+    _, err = os.Stat(base_dir + cur_project)
     if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    err = os.WriteFile(base_dir + cur_project + "/host_info.txt", 
-                       []byte(cur_ip + ":" + cur_port),
-                       0644)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    err = os.WriteFile(base_dir + cur_project + "/branches.txt", 
-                       []byte(cur_branch + "\n"),
-                       0644)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
-    }
-    err = os.WriteFile(base_dir + cur_project + "/cur_branch.txt", 
-                       []byte(cur_branch),
-                       0644)
-    if err != nil {
-      fmt.Println("Error:", err)
-      conn.Close()
-      return
+      if os.IsNotExist(err) {
+        err = os.Mkdir(base_dir + cur_project, 0755)
+        if err != nil {
+          fmt.Println("Error:", err)
+          conn.Close()
+          return
+        }
+        err = os.WriteFile(base_dir + cur_project + "/host_info.txt", 
+                           []byte(cur_ip + ":" + cur_port),
+                           0644)
+        if err != nil {
+          fmt.Println("Error:", err)
+          conn.Close()
+          return
+        }
+        err = os.WriteFile(base_dir + cur_project + "/branches.txt", 
+                           []byte(cur_branch + "\n"),
+                           0644)
+        if err != nil {
+          fmt.Println("Error:", err)
+          conn.Close()
+          return
+        }
+        err = os.WriteFile(base_dir + cur_project + "/cur_branch.txt", 
+                           []byte(cur_branch),
+                           0644)
+        if err != nil {
+          fmt.Println("Error:", err)
+          conn.Close()
+          return
+        }
+      } else {
+        fmt.Println("Error:", err)
+        conn.Close()
+        return
+      }
     }
     err = os.Mkdir(base_dir + cur_project + "/" + cur_branch, 
                        0755)
