@@ -1883,6 +1883,8 @@ func CommitRequestStandard(conn net.Conn,
       return
     }
     mu.Unlock()
+  } else {
+    cur_val += ("/" + cur_valb)
   }
   ////
   //COMMIT VERIF
@@ -2553,6 +2555,8 @@ func CommitRequestAdmin(conn net.Conn,
       return
     }
     mu.Unlock()
+  } else {
+    cur_val += ("/" + cur_valb)
   }
   ////
   //COMMIT VERIF
@@ -2659,6 +2663,7 @@ func CommitRequestAdmin(conn net.Conn,
     return
   }
   mu.RLock()
+  fmt.Println("cur_val:", cur_val)
   data, err := os.ReadFile(cur_val + "/commits.txt")
   if err != nil {
     conn.Close()
@@ -2689,6 +2694,7 @@ func CommitRequestAdmin(conn net.Conn,
     }
   }
   ////
+  fmt.Println("ok2")
   err = conn.SetDeadline(time.Now().Add(1 * time.Second))
   if err != nil {
     conn.Close()
