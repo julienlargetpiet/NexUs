@@ -1154,7 +1154,7 @@ func main() {
       return
     }
     err = os.WriteFile(base_dir + cur_val + "/host_info.txt", 
-                       []byte("main\n"), 
+                       []byte(""), 
                        0644)
     if err != nil {
       fmt.Println("Error:", err)
