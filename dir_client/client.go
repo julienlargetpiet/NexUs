@@ -2595,7 +2595,6 @@ func main() {
     }
     str_data = string(data)
     cur_val = ""
-    fmt.Println("okok")
     for i = 0; i < len(str_data); i++ {
       if str_data[i] != '\n' {
         cur_val += string(str_data[i])
